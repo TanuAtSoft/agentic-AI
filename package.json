@@ -1,0 +1,14 @@
+{
+  "name": "agentic_ai",
+  "version": "1.0.0",
+  "description": "AI powered lead research assistant POC",
+  "private": true,
+  "scripts": {
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "build:frontend": "npm run build --prefix frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
