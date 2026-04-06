@@ -38,6 +38,36 @@ function safeJsonParse(text) {
   }
 }
 
+function extractJsonObject(text) {
+  if (!text || typeof text !== "string") {
+    return null;
+  }
+
+  const direct = safeJsonParse(text);
+  if (direct) {
+    return direct;
+  }
+
+  const withoutFences = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  const fenced = safeJsonParse(withoutFences);
+  if (fenced) {
+    return fenced;
+  }
+
+  const start = withoutFences.indexOf("{");
+  const end = withoutFences.lastIndexOf("}");
+  if (start !== -1 && end !== -1 && end > start) {
+    return safeJsonParse(withoutFences.slice(start, end + 1));
+  }
+
+  return null;
+}
+
 function markFallback(reason) {
   diagnostics.fallbackCount += 1;
   diagnostics.lastStatus = "fallback";
@@ -100,6 +130,7 @@ module.exports = {
   hasOpenAIKey,
   getOpenAIClient,
   safeJsonParse,
+  extractJsonObject,
   callWithOpenAIRequest,
   callWithOpenAI,
   markFallback,

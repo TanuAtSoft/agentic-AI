@@ -1,4 +1,4 @@
-const { hasOpenAIKey, callWithOpenAI, markFallback } = require("./openaiClient");
+const { hasOpenAIKey, callWithOpenAI, markFallback, extractJsonObject } = require("./openaiClient");
 
 function buildPrompt({ company, decisionMakers, companySignals, insights, searchStrategy, input }) {
   const primaryDM = decisionMakers[0] || {};
@@ -79,14 +79,7 @@ async function generatePersonalizedContent(context) {
   }
 
   const text = result.completion.output_text?.trim();
-  let parsed = null;
-  if (text) {
-    try {
-      parsed = JSON.parse(text);
-    } catch (_err) {
-      parsed = null;
-    }
-  }
+  const parsed = extractJsonObject(text);
 
   if (!parsed) {
     markFallback("Message generation fallback: invalid or empty model output");
