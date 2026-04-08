@@ -87,7 +87,15 @@ input {
   gap: 14px;
 }
 
+.workflow-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
 .metric-card,
+.workflow-card,
 .panel,
 .source-card,
 .decision-card,
@@ -102,6 +110,40 @@ input {
 .metric-card {
   border-radius: 22px;
   padding: 20px;
+}
+
+.workflow-card {
+  position: relative;
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.workflow-card h3,
+.dual-panel h3 {
+  margin: 8px 0 8px;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.workflow-card p,
+.caption {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.workflow-card.active {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(238, 248, 251, 0.78));
+}
+
+.workflow-index {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 800;
 }
 
 .metric-card span,
@@ -223,6 +265,10 @@ button:disabled {
   animation: rise-in 500ms ease;
 }
 
+.orchestration-panel {
+  animation: rise-in 500ms ease;
+}
+
 .source-list,
 .decision-maker-grid,
 .message-grid,
@@ -236,6 +282,23 @@ button:disabled {
 .message-block {
   border-radius: 20px;
   padding: 16px;
+}
+
+.dual-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.detail-list {
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+}
+
+.detail-list li + li {
+  margin-top: 8px;
 }
 
 .source-topline {
@@ -283,6 +346,13 @@ button:disabled {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.decision-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
 .decision-name {
   font-weight: 800;
   color: var(--accent-strong);
@@ -292,6 +362,41 @@ button:disabled {
 .decision-title {
   margin-top: 0;
   font-weight: 700;
+}
+
+.confidence-chip {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.confidence-chip.high {
+  color: var(--success);
+  background: rgba(21, 128, 61, 0.12);
+}
+
+.confidence-chip.medium {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.confidence-chip.low {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.12);
+}
+
+.profile-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--accent-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.profile-link:hover {
+  text-decoration: underline;
 }
 
 .signal-columns {
@@ -321,6 +426,39 @@ button:disabled {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.message-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.featured-message {
+  background: linear-gradient(180deg, rgba(238, 248, 251, 0.9), rgba(255, 255, 255, 0.92));
+}
+
+.analysis-banner {
+  margin-top: 16px;
+  border-radius: 18px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(14, 116, 144, 0.1), rgba(245, 158, 11, 0.08));
+}
+
+.analysis-banner span {
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+
+.analysis-banner p {
+  margin: 0;
+  color: #18232f;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
 .muted-text,
 .empty-state {
   color: var(--text-muted);
@@ -340,7 +478,9 @@ button:disabled {
 
 @media (max-width: 1080px) {
   .hero,
+  .workflow-strip,
   .workspace-grid,
+  .dual-panel,
   .decision-maker-grid,
   .signal-columns,
   .message-grid,

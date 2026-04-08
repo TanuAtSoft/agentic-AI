@@ -3,9 +3,11 @@
 This project is a complete starter POC for:
 
 - Inputting `companyName`, `industry`, `companySize`, `geography`
-- Inferring likely decision makers using OpenAI
-- Generating hiring and growth signals from live website content when available
-- Producing a personalized outreach message with OpenAI (or fallback template)
+- Identifying likely decision-makers
+- Gathering company and individual insights
+- Analyzing hiring, growth, technology, and messaging signals
+- Generating hyper-personalized outreach for email, LinkedIn, and calls
+- Deciding where to search and which signals matter most for each account
 
 ## Tech Stack
 
@@ -17,6 +19,7 @@ This project is a complete starter POC for:
 
 - `backend` - API and lead pipeline
 - `frontend` - React UI
+- `render.yaml` - Render blueprint for one-click deployment
 
 ## Quick Start
 
@@ -69,11 +72,36 @@ Request body:
 
 Response includes:
 
+- search strategy
 - company details
-- likely decision makers (AI inferred)
+- likely decision makers
 - company signals
-- insight summary
-- personalized message
+- synthesized insights
+- personalized outreach content
+
+## Deploy on Render
+
+This repo includes a root-level `render.yaml` so you can deploy both services from the same GitHub repository.
+
+Services created:
+
+- `agentic-ai-backend` - Node/Express API from `backend`
+- `agentic-ai-frontend` - Static Vite app from `frontend`
+
+Steps:
+
+1. Push this repo to GitHub.
+2. In Render, choose `New +` -> `Blueprint`.
+3. Select this GitHub repository.
+4. Render will detect `render.yaml` and create both services.
+5. In the backend service, set `OPENAI_API_KEY`.
+6. Deploy the blueprint.
+
+Render config notes:
+
+- Frontend `VITE_API_BASE_URL` is sourced from the backend service URL.
+- Backend health check is `/health`.
+- The backend only reads `backend/.env` locally. It does not load `.env.example` in production.
 
 ## Notes
 

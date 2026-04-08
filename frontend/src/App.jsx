@@ -9,6 +9,29 @@ const initialForm = {
   geography: "North America"
 };
 
+const workflowSteps = [
+  {
+    id: "search",
+    title: "Decide where to search",
+    description: "Choose company site, web, LinkedIn, and regional sources based on the account."
+  },
+  {
+    id: "buyers",
+    title: "Identify decision-makers",
+    description: "Find the most relevant leaders and explain why each one matters."
+  },
+  {
+    id: "signals",
+    title: "Gather and analyze signals",
+    description: "Pull hiring, growth, technology, and messaging clues into a single view."
+  },
+  {
+    id: "outreach",
+    title: "Generate outreach",
+    description: "Craft personalized email, LinkedIn, and call-opening copy from the synthesized context."
+  }
+];
+
 function renderList(items) {
   if (!items?.length) {
     return <p className="empty-state">No data available.</p>;
@@ -16,6 +39,20 @@ function renderList(items) {
 
   return (
     <ul className="pill-list">
+      {items.map((item) => (
+        <li key={item}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+function renderTextList(items) {
+  if (!items?.length) {
+    return <p className="empty-state">No data available.</p>;
+  }
+
+  return (
+    <ul className="detail-list">
       {items.map((item) => (
         <li key={item}>{item}</li>
       ))}
@@ -74,9 +111,13 @@ export default function App() {
   };
 
   const searchStrategy = result?.searchStrategy;
+  const company = result?.company;
+  const companySignals = result?.companySignals;
+  const insights = result?.insights;
   const personalizedMessage = result?.personalizedMessage;
-  const legacyMessage = personalizedMessage?.message;
-  const emailMessage = personalizedMessage?.email || legacyMessage || "";
+  const executionSummary = result?.executionSummary;
+
+  const emailMessage = personalizedMessage?.email || personalizedMessage?.message || "";
   const linkedinMessage =
     personalizedMessage?.linkedinMessage ||
     "LinkedIn variant unavailable in this response shape.";
@@ -84,36 +125,47 @@ export default function App() {
     personalizedMessage?.callOpener || "Call opener unavailable in this response shape.";
   const subjectLine =
     personalizedMessage?.subjectLine ||
-    (result?.company?.name ? `${result.company.name} growth idea` : "Generated outreach");
+    (company?.name ? `${company.name} growth idea` : "Generated outreach");
 
   return (
     <main className="page-shell">
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Agentic lead research POC</p>
-          <h1>Turn a company input into buyer research, signals, and outreach.</h1>
+          <p className="eyebrow">Agentic GTM research console</p>
+          <h1>From one company input to a complete outbound brief.</h1>
           <p className="subtitle">
-            This prototype decides where to look, infers likely stakeholders, synthesizes public
-            signals, and drafts context-aware outbound messaging.
+            Give the system a company, industry, size, and geography. It decides where to search,
+            identifies likely buyers, selects relevant signals, synthesizes insights, and crafts
+            context-aware outreach.
           </p>
         </div>
         <div className="hero-metrics">
           <div className="metric-card">
-            <span>Inputs</span>
-            <strong>Company, industry, size, geography</strong>
+            <span>System does</span>
+            <strong>Research planning, buyer discovery, signal analysis, and messaging</strong>
           </div>
           <div className="metric-card">
-            <span>Outputs</span>
-            <strong>Decision-makers, signals, messaging</strong>
+            <span>Powered by</span>
+            <strong>Website context, OpenAI synthesis, and structured output cards</strong>
           </div>
         </div>
+      </section>
+
+      <section className="workflow-strip">
+        {workflowSteps.map((step, index) => (
+          <article key={step.id} className={`workflow-card ${result ? "active" : ""}`}>
+            <span className="workflow-index">0{index + 1}</span>
+            <h3>{step.title}</h3>
+            <p>{step.description}</p>
+          </article>
+        ))}
       </section>
 
       <section className="workspace-grid">
         <form onSubmit={handleSubmit} className="panel composer-panel">
           <div className="panel-heading">
-            <p className="eyebrow">1. Configure account</p>
-            <h2>Target company brief</h2>
+            <p className="eyebrow">Input</p>
+            <h2>Company brief</h2>
           </div>
 
           <label>
@@ -159,18 +211,18 @@ export default function App() {
 
           <div className="button-row">
             <button type="submit" disabled={loading}>
-              {loading ? "Running pipeline..." : "Generate intelligence"}
+              {loading ? "Running agent..." : "Generate outbound brief"}
             </button>
             <button type="button" className="secondary-button" onClick={refreshOpenAIDebug}>
-              Check model status
+              Refresh diagnostics
             </button>
           </div>
 
           <div className="hint-box">
-            <strong>What the POC does:</strong>
+            <strong>Expected output</strong>
             <p>
-              Plans search surfaces, reads public company context, scores likely buying signals,
-              and creates outreach for email, LinkedIn, and call prep.
+              Decision-makers, company and individual insights, relevant signals, recommended
+              channels, and hyper-personalized messaging tied to the account context.
             </p>
           </div>
 
@@ -178,36 +230,36 @@ export default function App() {
         </form>
 
         <section className="results-column">
-          <div className="panel summary-panel">
+          <div className="panel orchestration-panel">
             <div className="panel-heading">
-              <p className="eyebrow">2. Search strategy</p>
-              <h2>System reasoning</h2>
+              <p className="eyebrow">System orchestration</p>
+              <h2>Where the agent looked and why</h2>
             </div>
 
             {result ? (
               <>
-                <p className="summary-line">
-                  <strong>Persona focus:</strong>{" "}
-                  {searchStrategy?.primaryPersonaFocus || "Commercial and operations leadership"}
-                </p>
-                <p className="summary-line">
-                  <strong>Intent:</strong>{" "}
-                  {searchStrategy?.searchIntent ||
-                    "Find likely decision-makers, gather context, detect signals, and draft outreach."}
-                </p>
+                <div className="stats-grid compact">
+                  <div>
+                    <span>Persona focus</span>
+                    <strong>
+                      {searchStrategy?.primaryPersonaFocus || "Commercial and operations leadership"}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>Intent</span>
+                    <strong>{searchStrategy?.searchIntent || "Generate account intelligence"}</strong>
+                  </div>
+                  <div>
+                    <span>Generated</span>
+                    <strong>{new Date(result.generatedAt).toLocaleString()}</strong>
+                  </div>
+                  <div>
+                    <span>Freshness</span>
+                    <strong>{companySignals?.dataFreshness || "Heuristic"}</strong>
+                  </div>
+                </div>
                 <div className="source-list">
-                  {(searchStrategy?.sourcePlan || [
-                    {
-                      name: "Company website",
-                      purpose: "Use public website content as the primary research source.",
-                      status: "active"
-                    },
-                    {
-                      name: "LinkedIn public footprint",
-                      purpose: "Infer likely stakeholders and public messaging themes.",
-                      status: "planned"
-                    }
-                  ]).map((source) => (
+                  {(searchStrategy?.sourcePlan || []).map((source) => (
                     <article key={source.name} className="source-card">
                       <div className="source-topline">
                         <h3>{source.name}</h3>
@@ -217,10 +269,21 @@ export default function App() {
                     </article>
                   ))}
                 </div>
+                <div className="dual-panel">
+                  <div>
+                    <h3>Signal checklist</h3>
+                    {renderTextList(searchStrategy?.signalChecklist)}
+                  </div>
+                  <div>
+                    <h3>Sources used</h3>
+                    {renderTextList(executionSummary?.sourcesUsed)}
+                  </div>
+                </div>
               </>
             ) : (
               <p className="empty-state">
-                Run the pipeline to see which sources and signal categories the system prioritized.
+                Run the pipeline to see how the system chooses LinkedIn, web, company-site, and
+                regional search surfaces for the account.
               </p>
             )}
           </div>
@@ -229,46 +292,63 @@ export default function App() {
             <>
               <div className="panel">
                 <div className="panel-heading">
-                  <p className="eyebrow">3. Account snapshot</p>
-                  <h2>{result.company.name}</h2>
+                  <p className="eyebrow">Account context</p>
+                  <h2>{company?.name}</h2>
                 </div>
                 <div className="stats-grid">
                   <div>
                     <span>Website</span>
-                    <strong>{result.company.website}</strong>
+                    <strong>{company?.website}</strong>
                   </div>
                   <div>
                     <span>Industry</span>
-                    <strong>{result.company.industry}</strong>
+                    <strong>{company?.industry}</strong>
                   </div>
                   <div>
                     <span>Company size</span>
-                    <strong>{result.company.companySize}</strong>
+                    <strong>{company?.companySize}</strong>
                   </div>
                   <div>
                     <span>Geography</span>
-                    <strong>{result.company.geography}</strong>
+                    <strong>{company?.geography}</strong>
                   </div>
                 </div>
-                <p className="body-copy">{result.company.websiteSummary.description || "No public company description detected."}</p>
-                {renderList(result.company.websiteSummary.keywords)}
+                <p className="body-copy">
+                  {company?.websiteSummary?.description || "No public company description detected."}
+                </p>
+                <div className="dual-panel">
+                  <div>
+                    <h3>Website title</h3>
+                    <p className="body-copy">{company?.websiteSummary?.title || "Not available"}</p>
+                  </div>
+                  <div>
+                    <h3>Detected themes</h3>
+                    {renderList(company?.websiteSummary?.keywords)}
+                  </div>
+                </div>
               </div>
 
               <div className="panel">
                 <div className="panel-heading">
-                  <p className="eyebrow">4. Likely decision-makers</p>
-                  <h2>Buyer candidates</h2>
+                  <p className="eyebrow">Decision-makers</p>
+                  <h2>Who to reach out to</h2>
                 </div>
                 <div className="decision-maker-grid">
-                  {result.decisionMakers.map((person) => (
+                  {(result.decisionMakers || []).map((person) => (
                     <article key={`${person.name}-${person.title}`} className="decision-card">
-                      <p className="decision-name">{person.name}</p>
+                      <div className="decision-header">
+                        <p className="decision-name">{person.name}</p>
+                        <span className={`confidence-chip ${person.confidence || "medium"}`}>
+                          {person.confidence || "medium"}
+                        </span>
+                      </div>
                       <p className="decision-title">{person.title}</p>
                       <p>{person.whyRelevant}</p>
-                      <p className="muted-text">Recent signal: {person.recentPost}</p>
-                      <p className="muted-text">
-                        Confidence: {person.confidence} | Source: {person.source}
-                      </p>
+                      <p className="muted-text">Recent post: {person.recentPost}</p>
+                      <p className="muted-text">Source: {person.source}</p>
+                      <a className="profile-link" href={person.profileUrl} target="_blank" rel="noreferrer">
+                        View profile
+                      </a>
                     </article>
                   ))}
                 </div>
@@ -276,72 +356,85 @@ export default function App() {
 
               <div className="panel">
                 <div className="panel-heading">
-                  <p className="eyebrow">5. Signals and analysis</p>
+                  <p className="eyebrow">Insights and signals</p>
                   <h2>Why this account matters now</h2>
                 </div>
                 <div className="stats-grid compact">
                   <div>
                     <span>Priority</span>
-                    <strong>{result.insights?.accountPriority || "High"}</strong>
+                    <strong>{insights?.accountPriority || "High"}</strong>
                   </div>
                   <div>
-                    <span>Freshness</span>
-                    <strong>{result.companySignals?.dataFreshness || "Heuristic"}</strong>
-                  </div>
-                  <div>
-                    <span>Hiring detected</span>
-                    <strong>{String(result.companySignals?.hiring)}</strong>
+                    <span>Hiring</span>
+                    <strong>{String(companySignals?.hiring)}</strong>
                   </div>
                   <div>
                     <span>Best channels</span>
-                    <strong>{(result.insights?.bestChannels || ["Email"]).join(", ")}</strong>
+                    <strong>{(insights?.bestChannels || ["Email"]).join(", ")}</strong>
+                  </div>
+                  <div>
+                    <span>Recommendation</span>
+                    <strong>{insights?.recommendation || "Use low-friction CTA"}</strong>
                   </div>
                 </div>
-                <p className="body-copy">
-                  <strong>Outreach angle:</strong> {result.insights?.outreachAngle}
-                </p>
+                <div className="analysis-banner">
+                  <span>Outreach angle</span>
+                  <p>{insights?.outreachAngle}</p>
+                </div>
                 <p className="body-copy">
                   <strong>Signal summary:</strong>{" "}
-                  {result.insights?.signalSummary || "Signals synthesized from the current account context."}
+                  {insights?.signalSummary || "Signals synthesized from the current account context."}
                 </p>
-                {renderList(result.insights?.keyReasons)}
+                <div className="dual-panel">
+                  <div>
+                    <h3>Key reasons</h3>
+                    {renderTextList(insights?.keyReasons)}
+                  </div>
+                  <div>
+                    <h3>Messaging signals</h3>
+                    {renderTextList(companySignals?.messagingSignals)}
+                  </div>
+                </div>
                 <div className="signal-columns">
                   <div>
-                    <h3>Open roles</h3>
-                    {renderList(result.companySignals?.openRoles)}
+                    <h3>Hiring signals</h3>
+                    {renderList(companySignals?.openRoles)}
+                    <p className="caption">{companySignals?.hiringTrend}</p>
                   </div>
                   <div>
-                    <h3>Growth keywords</h3>
-                    {renderList(result.companySignals?.growthKeywords)}
+                    <h3>Growth signals</h3>
+                    {renderTextList(companySignals?.growthSignals)}
                   </div>
                   <div>
-                    <h3>Tech keywords</h3>
-                    {renderList(result.companySignals?.techKeywords)}
+                    <h3>Technology cues</h3>
+                    {renderList(companySignals?.techKeywords)}
                   </div>
                 </div>
               </div>
 
               <div className="panel">
                 <div className="panel-heading">
-                  <p className="eyebrow">6. Outreach output</p>
-                  <h2>Personalized messaging</h2>
+                  <p className="eyebrow">Outreach</p>
+                  <h2>Hyper-personalized messaging</h2>
                 </div>
-                <div className="message-block">
-                  <span>Subject line</span>
-                  <p>{subjectLine}</p>
-                </div>
-                <div className="message-block">
-                  <span>Email</span>
-                  <p>{emailMessage}</p>
-                </div>
-                <div className="message-grid">
-                  <div className="message-block">
-                    <span>LinkedIn message</span>
-                    <p>{linkedinMessage}</p>
+                <div className="message-stack">
+                  <div className="message-block featured-message">
+                    <span>Subject line</span>
+                    <p>{subjectLine}</p>
                   </div>
                   <div className="message-block">
-                    <span>Call opener</span>
-                    <p>{callOpener}</p>
+                    <span>Email</span>
+                    <p>{emailMessage}</p>
+                  </div>
+                  <div className="message-grid">
+                    <div className="message-block">
+                      <span>LinkedIn message</span>
+                      <p>{linkedinMessage}</p>
+                    </div>
+                    <div className="message-block">
+                      <span>Call opener</span>
+                      <p>{callOpener}</p>
+                    </div>
                   </div>
                 </div>
                 <p className="muted-text">
@@ -353,8 +446,8 @@ export default function App() {
 
           <div className="panel">
             <div className="panel-heading">
-              <p className="eyebrow">Runtime</p>
-              <h2>OpenAI diagnostics</h2>
+              <p className="eyebrow">Diagnostics</p>
+              <h2>Runtime health</h2>
             </div>
             {openaiDebug ? (
               <div className="stats-grid compact">
@@ -371,12 +464,12 @@ export default function App() {
                   <strong>{openaiDebug.diagnostics?.totalAttempts || 0}</strong>
                 </div>
                 <div>
-                  <span>Fallbacks</span>
-                  <strong>{openaiDebug.diagnostics?.fallbackCount || 0}</strong>
+                  <span>Successes</span>
+                  <strong>{openaiDebug.diagnostics?.successCount || 0}</strong>
                 </div>
               </div>
             ) : (
-              <p className="empty-state">Use "Check model status" to inspect the backend runtime.</p>
+              <p className="empty-state">Use "Refresh diagnostics" to inspect backend runtime health.</p>
             )}
           </div>
         </section>

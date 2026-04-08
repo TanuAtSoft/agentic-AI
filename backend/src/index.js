@@ -1,8 +1,5 @@
 const path = require("path");
 require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
-if (!process.env.OPENAI_API_KEY) {
-  require("dotenv").config({ path: path.join(__dirname, "..", ".env.example") });
-}
 const express = require("express");
 const cors = require("cors");
 const { leadPipeline } = require("./pipeline/leadPipeline");
@@ -66,6 +63,11 @@ app.get("/debug/test-openai", async (_req, res) => {
 app.post("/lead", async (req, res) => {
   try {
     const { companyName, industry, companySize, geography } = req.body || {};
+
+    console.log("[Frontend -> /lead Payload]", {
+      at: new Date().toISOString(),
+      payload: req.body || {}
+    });
 
     if (!companyName || typeof companyName !== "string") {
       return res.status(400).json({

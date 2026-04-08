@@ -74,6 +74,34 @@ function markFallback(reason) {
   diagnostics.lastErrorMessage = reason || "Fallback used";
 }
 
+function logOpenAIRequest(request) {
+  console.log("[OpenAI Request]", {
+    at: new Date().toISOString(),
+    model: request?.model || null,
+    tools: request?.tools || [],
+    input: request?.input || null
+  });
+}
+
+function logOpenAIResponse(completion) {
+  console.log("[OpenAI Response]", {
+    at: new Date().toISOString(),
+    model: completion?.model || null,
+    outputText: completion?.output_text || "",
+    output: completion?.output || []
+  });
+}
+
+function logOpenAIError(error) {
+  console.error("[OpenAI Error]", {
+    at: new Date().toISOString(),
+    status: error?.status || 0,
+    code: error?.code || null,
+    type: error?.type || null,
+    message: error?.message || "Unknown OpenAI error"
+  });
+}
+
 async function callWithOpenAIRequest(request) {
   diagnostics.totalAttempts += 1;
   diagnostics.lastAttemptAt = new Date().toISOString();
@@ -89,7 +117,9 @@ async function callWithOpenAIRequest(request) {
   }
 
   try {
+    logOpenAIRequest(request);
     const completion = await client.responses.create(request);
+    logOpenAIResponse(completion);
     diagnostics.successCount += 1;
     diagnostics.lastStatus = "success";
     diagnostics.lastSuccessAt = new Date().toISOString();
@@ -99,6 +129,7 @@ async function callWithOpenAIRequest(request) {
     diagnostics.lastErrorStatus = null;
     return { ok: true, completion };
   } catch (error) {
+    logOpenAIError(error);
     diagnostics.failureCount += 1;
     diagnostics.lastStatus = "error";
     diagnostics.lastErrorAt = new Date().toISOString();
