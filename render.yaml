@@ -15,7 +15,8 @@ services:
       - key: OPENAI_WEB_SEARCH_MODEL
         value: gpt-4.1-mini
 
-  - type: static
+  - type: web
+    runtime: static
     name: agentic-ai-frontend
     rootDir: frontend
     buildCommand: npm install && npm run build
