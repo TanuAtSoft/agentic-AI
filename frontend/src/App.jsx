@@ -450,6 +450,46 @@ export default function App() {
                       Pattern: {hunterIntelligence.pattern || "Unavailable"} | Source:{" "}
                       {hunterIntelligence.source || "hunter-domain-search"}
                     </p>
+                    <div className="hunter-subsection">
+                      <h3>Decision maker emails</h3>
+                      <div className="hunter-email-list">
+                        {(hunterIntelligence.decisionMakerEmails || []).length ? (
+                          hunterIntelligence.decisionMakerEmails.map((contact) => (
+                            <article key={contact.email} className="hunter-email-card">
+                              <div className="source-topline">
+                                <h3>{contact.name}</h3>
+                                <span
+                                  className={`status-chip ${
+                                    contact.verificationStatus === "valid" ? "active" : "planned"
+                                  }`}
+                                >
+                                  {contact.confidence || 0}
+                                </span>
+                              </div>
+                              <p className="decision-title">{contact.title || "Unknown title"}</p>
+                              <p className="muted-text">Email: {contact.email}</p>
+                              <p className="muted-text">
+                                Verification: {contact.verificationStatus || "unverified"}
+                              </p>
+                              {contact.linkedinUrl ? (
+                                <a
+                                  className="profile-link"
+                                  href={contact.linkedinUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  View LinkedIn
+                                </a>
+                              ) : null}
+                            </article>
+                          ))
+                        ) : (
+                          <p className="empty-state">
+                            No decision maker emails were returned by Hunter for this search.
+                          </p>
+                        )}
+                      </div>
+                    </div>
                     <div className="hunter-contact-list">
                       {(hunterIntelligence.decisionMakerContacts || []).length ? (
                         <div className="hunter-subsection">

@@ -87,7 +87,15 @@ async function leadPipeline(input) {
           totalContacts: hunterSearch.totalContacts,
           totalDecisionMakers: hunterSearch.totalDecisionMakers,
           contacts: hunterSearch.contacts,
-          decisionMakerContacts: hunterSearch.decisionMakerContacts
+          decisionMakerContacts: hunterSearch.decisionMakerContacts,
+          decisionMakerEmails: hunterSearch.decisionMakerContacts.map((contact) => ({
+            name: contact.name,
+            title: contact.title,
+            email: contact.email,
+            confidence: contact.confidence,
+            verificationStatus: contact.verificationStatus,
+            linkedinUrl: contact.linkedinUrl
+          }))
         }
       : null,
     companySignals,

@@ -520,6 +520,18 @@ button:disabled {
   gap: 14px;
 }
 
+.hunter-email-list {
+  display: grid;
+  gap: 14px;
+}
+
+.hunter-email-card {
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid rgba(14, 116, 144, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+}
+
 .hunter-contact-card {
   border-radius: 20px;
   padding: 16px;

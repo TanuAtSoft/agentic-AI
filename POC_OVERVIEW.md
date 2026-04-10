@@ -29,13 +29,13 @@ The current implementation is focused on validating the workflow and user experi
 In this POC, the system:
 
 - Uses company website content as the primary live data source
+- Can optionally use Apify-backed connectors for LinkedIn, Indeed, and Crunchbase signals
 - Uses OpenAI to infer likely buyers, synthesize insights, and generate messaging
 - Produces structured output for sales operators in a frontend dashboard
 - Includes fallback behavior so the app remains usable if model output is unavailable
 
 This POC does not currently:
 
-- Scrape LinkedIn directly
 - Integrate CRM systems
 - Persist account history in a database
 - Run scheduled enrichment jobs
@@ -46,14 +46,15 @@ This POC does not currently:
 1. User enters company name, industry, company size, and geography.
 2. Backend resolves the company website and fetches public website context where available.
 3. System plans a search strategy and defines which research surfaces are relevant.
-4. OpenAI infers likely decision-makers.
-5. Backend extracts company signals from available context.
-6. OpenAI synthesizes the account insights and recommends outreach direction.
-7. OpenAI generates personalized messaging for:
+4. The backend optionally calls Apify-backed connectors for LinkedIn, Indeed, and Crunchbase public signals.
+5. OpenAI infers likely decision-makers.
+6. Backend extracts company signals and ICP/footprint context from available data.
+7. OpenAI synthesizes the account insights and recommends outreach direction.
+8. OpenAI generates personalized messaging for:
    - Email
    - LinkedIn
    - Call opener
-8. Frontend displays the output in a structured outbound research console.
+9. Frontend displays the output in a structured outbound research console.
 
 ## Tech Stack
 
@@ -239,7 +240,7 @@ This POC shows how an AI agent can reduce manual pre-outreach research effort by
 ## Known Limitations
 
 - Decision-makers are inferred and may not always reflect current org charts
-- LinkedIn is treated conceptually in the workflow but is not directly integrated
+- Apify-backed LinkedIn, Indeed, and Crunchbase connectors depend on actor IDs and an Apify token
 - Website analysis is limited to accessible public page content
 - No persistence layer or user authentication is included
 - No CRM integration is included in the current phase

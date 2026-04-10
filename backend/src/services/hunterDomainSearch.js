@@ -202,6 +202,22 @@ async function fetchHunterDomainSearch({ website, companyName, limit = Number(pr
       isDecisionMakerTitle(contact.title, contact.seniority)
     );
 
+    console.log("[Hunter Domain Search]", {
+      domain,
+      organization: data.organization || companyName || "",
+      pattern: data.pattern || "",
+      acceptAll: typeof data.accept_all === "boolean" ? data.accept_all : null,
+      totalContacts: contacts.length,
+      totalDecisionMakers: decisionMakerContacts.length,
+      decisionMakerEmails: decisionMakerContacts.map((contact) => ({
+        name: contact.name,
+        title: contact.title,
+        email: contact.email,
+        confidence: contact.confidence,
+        verificationStatus: contact.verificationStatus
+      }))
+    });
+
     return {
       ok: true,
       source: "hunter-domain-search",

@@ -6,6 +6,9 @@ This project is a complete starter POC for:
 - Identifying likely decision-makers
 - Gathering company and individual insights
 - Analyzing hiring, growth, technology, and messaging signals
+- Extracting intent signals from LinkedIn and hiring data
+- Finalizing ICP criteria for target segments
+- Mapping company footprint across regions
 - Generating hyper-personalized outreach for email, LinkedIn, and calls
 - Deciding where to search and which signals matter most for each account
 
@@ -38,6 +41,7 @@ copy .env.example .env
 
 Then set `OPENAI_API_KEY` in `backend/.env` if you want real LLM output.
 Important: `.env.example` is only a template and is not loaded by the backend.
+If you want the hybrid enrichment flow, set `APIFY_TOKEN` plus the relevant `*_APIFY_ACTOR_ID` values in `backend/.env`.
 
 3. Run backend:
 
@@ -74,8 +78,13 @@ Response includes:
 
 - search strategy
 - company details
+- LinkedIn intent signals, if the scraping API is configured
+- Indeed hiring trends, if the scraping API is configured
+- Crunchbase funding signals, if the scraping API is configured
 - likely decision makers
 - company signals
+- ICP criteria
+- company footprint by region
 - synthesized insights
 - personalized outreach content
 
@@ -106,4 +115,5 @@ Render config notes:
 ## Notes
 
 - The backend now tries to fetch live website text from the company domain and uses it in analysis.
+- The backend can optionally call Apify-backed connectors for LinkedIn, Indeed, and Crunchbase signals.
 - If OpenAI key is missing or model output is invalid, fallback logic keeps the API stable.
