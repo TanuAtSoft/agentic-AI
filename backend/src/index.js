@@ -1,5 +1,6 @@
 const path = require("path");
-require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+const fs = require("fs");
+const dotenv = require("dotenv");
 const express = require("express");
 const cors = require("cors");
 const { leadPipeline } = require("./pipeline/leadPipeline");
@@ -7,6 +8,17 @@ const { getOpenAIDiagnostics, callWithOpenAI } = require("./services/openaiClien
 const { runWebSearch } = require("./services/webSearch");
 const { hasApifyToken, runApifyActor } = require("./services/apifyClient");
 const { hasHunterApiKey } = require("./services/hunterDomainSearch");
+
+const envPath = path.join(__dirname, "..", ".env");
+const envLocalPath = path.join(__dirname, "..", ".env.local");
+
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
+
+if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath, override: true });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
