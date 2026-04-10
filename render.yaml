@@ -14,6 +14,14 @@ services:
         value: gpt-4.1-mini
       - key: OPENAI_WEB_SEARCH_MODEL
         value: gpt-4.1-mini
+      - key: APIFY_TOKEN
+        sync: false
+      - key: HUNTER_API_KEY
+        sync: false
+      - key: SOFTPRODIGY_APIFY_ACTOR_ID
+        value: GWVs761IEVnlW4SYp
+      - key: SOFTPRODIGY_APIFY_TIMEOUT_SECONDS
+        value: "120"
 
   - type: web
     runtime: static

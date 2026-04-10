@@ -14,9 +14,10 @@ function buildTitleCandidates(industry) {
 
 const { hasOpenAIKey, safeJsonParse, callWithOpenAI, markFallback } = require("./openaiClient");
 
-function fallbackDecisionMakers(company) {
+function fallbackDecisionMakers(company, linkedinSignals) {
   const titles = buildTitleCandidates(company.industry);
   const safeName = company.name.split(" ")[0] || "Company";
+  const linkedinSignal = linkedinSignals?.intentSignals?.[0]?.description || "public activity patterns";
   return titles.slice(0, 2).map((title, index) => ({
     name: `${safeName} Leader ${index + 1}`,
     title,
@@ -24,7 +25,7 @@ function fallbackDecisionMakers(company) {
     recentPost:
       index === 0
         ? "We are investing in hiring and improving operational efficiency."
-        : "Excited about building strategic partnerships this quarter.",
+        : `Excited about building strategic partnerships this quarter and watching ${linkedinSignal}.`,
     confidence: "medium",
     source: "POC-mock",
     whyRelevant:
@@ -34,10 +35,10 @@ function fallbackDecisionMakers(company) {
   }));
 }
 
-async function findDecisionMakers(company, _input, searchStrategy) {
+async function findDecisionMakers(company, _input, searchStrategy, linkedinSignals = null) {
   if (!hasOpenAIKey()) {
     markFallback("Decision maker inference used fallback: key missing");
-    return fallbackDecisionMakers(company);
+    return fallbackDecisionMakers(company, linkedinSignals);
   }
 
   const prompt = `
@@ -64,6 +65,8 @@ Context:
 - Website description: ${company.websiteSummary?.description || ""}
 - Website snippet: ${company.websiteSummary?.textSnippet || ""}
 - Search focus: ${searchStrategy?.primaryPersonaFocus || "Commercial leadership"}
+- LinkedIn intent signals: ${JSON.stringify(linkedinSignals?.intentSignals || [])}
+- LinkedIn hiring signals: ${JSON.stringify(linkedinSignals?.hiringSignals || [])}
 
 Task:
 - Infer 2 likely decision makers relevant for B2B sales outreach.
@@ -79,7 +82,7 @@ Task:
     });
     if (!result.ok) {
       markFallback(`Decision maker inference fallback: ${result.error.message}`);
-      return fallbackDecisionMakers(company);
+      return fallbackDecisionMakers(company, linkedinSignals);
     }
 
     const parsed = safeJsonParse(result.completion.output_text || "");
@@ -100,7 +103,7 @@ Task:
   }
 
   markFallback("Decision maker inference output parsing failed");
-  return fallbackDecisionMakers(company);
+  return fallbackDecisionMakers(company, linkedinSignals);
 }
 
 module.exports = {

@@ -1,6 +1,13 @@
 const { hasOpenAIKey, safeJsonParse, callWithOpenAI, markFallback } = require("./openaiClient");
 
-function fallbackAnalysis({ companySignals, decisionMakers, input, searchStrategy }) {
+function fallbackAnalysis({
+  companySignals,
+  decisionMakers,
+  input,
+  searchStrategy,
+  icpCriteria,
+  companyFootprint
+}) {
   const primaryDM = decisionMakers[0];
   const reasons = [];
 
@@ -10,6 +17,18 @@ function fallbackAnalysis({ companySignals, decisionMakers, input, searchStrateg
 
   if (primaryDM && primaryDM.recentPost) {
     reasons.push("Decision-maker is publicly talking about growth and efficiency.");
+  }
+
+  if (companySignals.linkedinSignals?.intentSignals?.length) {
+    reasons.push("LinkedIn activity shows public intent around growth or expansion.");
+  }
+
+  if (icpCriteria?.finalizedICP?.buyingMotion) {
+    reasons.push(`ICP is aligned to ${icpCriteria.finalizedICP.buyingMotion.toLowerCase()}.`);
+  }
+
+  if (companyFootprint?.currentRegions?.length > 1) {
+    reasons.push("Company footprint spans more than one region.");
   }
 
   if (input.geography && input.geography !== "Unknown") {
@@ -27,10 +46,26 @@ function fallbackAnalysis({ companySignals, decisionMakers, input, searchStrateg
   };
 }
 
-async function analyzeSignals({ company, decisionMakers, companySignals, searchStrategy, input }) {
+async function analyzeSignals({
+  company,
+  decisionMakers,
+  companySignals,
+  searchStrategy,
+  input,
+  icpCriteria,
+  companyFootprint,
+  linkedinSignals
+}) {
   if (!hasOpenAIKey()) {
     markFallback("Signal analysis used fallback: key missing");
-    return fallbackAnalysis({ companySignals, decisionMakers, input, searchStrategy });
+    return fallbackAnalysis({
+      companySignals,
+      decisionMakers,
+      input,
+      searchStrategy,
+      icpCriteria,
+      companyFootprint
+    });
   }
 
   const prompt = `
@@ -52,6 +87,9 @@ Context:
 - Decision makers: ${JSON.stringify(decisionMakers)}
 - Company signals: ${JSON.stringify(companySignals)}
 - Search strategy: ${JSON.stringify(searchStrategy)}
+- ICP criteria: ${JSON.stringify(icpCriteria)}
+- Company footprint: ${JSON.stringify(companyFootprint)}
+- LinkedIn signals: ${JSON.stringify(linkedinSignals)}
 
 Task:
 - Create practical sales intelligence insights.
@@ -66,7 +104,14 @@ Task:
 
     if (!result.ok) {
       markFallback(`Signal analysis fallback: ${result.error.message}`);
-      return fallbackAnalysis({ companySignals, decisionMakers, input });
+      return fallbackAnalysis({
+        companySignals,
+        decisionMakers,
+        input,
+        searchStrategy,
+        icpCriteria,
+        companyFootprint
+      });
     }
 
     const parsed = safeJsonParse(result.completion.output_text || "");
@@ -85,7 +130,14 @@ Task:
   }
 
   markFallback("Signal analysis output parsing failed");
-  return fallbackAnalysis({ companySignals, decisionMakers, input, searchStrategy });
+  return fallbackAnalysis({
+    companySignals,
+    decisionMakers,
+    input,
+    searchStrategy,
+    icpCriteria,
+    companyFootprint
+  });
 }
 
 module.exports = {

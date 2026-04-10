@@ -5,10 +5,14 @@ const cors = require("cors");
 const { leadPipeline } = require("./pipeline/leadPipeline");
 const { getOpenAIDiagnostics, callWithOpenAI } = require("./services/openaiClient");
 const { runWebSearch } = require("./services/webSearch");
+const { hasApifyToken, runApifyActor } = require("./services/apifyClient");
+const { hasHunterApiKey } = require("./services/hunterDomainSearch");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const HAS_OPENAI_KEY = Boolean(process.env.OPENAI_API_KEY);
+const HAS_APIFY_TOKEN = hasApifyToken();
+const HAS_HUNTER_KEY = hasHunterApiKey();
 
 app.use(cors());
 app.use(express.json());
@@ -22,6 +26,76 @@ app.get("/debug/openai", (_req, res) => {
     openaiConfigured: HAS_OPENAI_KEY,
     diagnostics: getOpenAIDiagnostics()
   });
+});
+
+app.get("/debug/connectors", (_req, res) => {
+  const { hasLinkedInScraperApi, getLinkedInIntegrationMode } = require("./services/linkedinScraper");
+  const { hasIndeedScraperApi, getIndeedIntegrationMode } = require("./services/indeedScraper");
+  const { hasCrunchbaseScraperApi, getCrunchbaseIntegrationMode } = require("./services/crunchbaseScraper");
+
+  res.json({
+    openaiConfigured: HAS_OPENAI_KEY,
+    apifyConfigured: HAS_APIFY_TOKEN,
+    hunterConfigured: HAS_HUNTER_KEY,
+    linkedinScraperConfigured: hasLinkedInScraperApi(),
+    indeedScraperConfigured: hasIndeedScraperApi(),
+    crunchbaseScraperConfigured: hasCrunchbaseScraperApi(),
+    linkedinScraperMode: getLinkedInIntegrationMode(),
+    indeedScraperMode: getIndeedIntegrationMode(),
+    crunchbaseScraperMode: getCrunchbaseIntegrationMode()
+  });
+});
+
+app.post("/debug/apify/softprodigy", async (req, res) => {
+  try {
+    const actorId = process.env.SOFTPRODIGY_APIFY_ACTOR_ID || "GWVs761IEVnlW4SYp";
+    const input = {
+      url: "https://softprodigy.com/",
+      limit: "10",
+      ...(req.body && typeof req.body === "object" ? req.body : {})
+    };
+
+    if (!actorId) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing Apify actor id."
+      });
+    }
+
+    const result = await runApifyActor({
+      actorId,
+      input,
+      timeoutSeconds: Number(process.env.SOFTPRODIGY_APIFY_TIMEOUT_SECONDS || 120)
+    });
+
+    if (!result.ok) {
+      return res.status(result.status || 500).json({
+        ok: false,
+        source: "apify",
+        actorId,
+        input,
+        error: result.error
+      });
+    }
+
+    return res.json({
+      ok: true,
+      source: "apify",
+      actorId,
+      input,
+      run: result.run,
+      items: result.items
+    });
+  } catch (error) {
+    return res.status(500).json({
+      ok: false,
+      source: "apify",
+      error: {
+        status: 500,
+        message: error.message
+      }
+    });
+  }
 });
 
 app.get("/debug/test-openai", async (_req, res) => {

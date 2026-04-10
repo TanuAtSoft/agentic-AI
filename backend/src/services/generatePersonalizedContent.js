@@ -1,6 +1,16 @@
 const { hasOpenAIKey, callWithOpenAI, markFallback, extractJsonObject } = require("./openaiClient");
 
-function buildPrompt({ company, decisionMakers, companySignals, insights, searchStrategy, input }) {
+function buildPrompt({
+  company,
+  decisionMakers,
+  companySignals,
+  insights,
+  searchStrategy,
+  input,
+  icpCriteria,
+  companyFootprint,
+  linkedinSignals
+}) {
   const primaryDM = decisionMakers[0] || {};
   return `
 Return strictly valid JSON:
@@ -22,6 +32,9 @@ Context:
 - Hiring roles: ${(companySignals.openRoles || []).join(", ")}
 - Growth keywords: ${(companySignals.growthKeywords || []).join(", ") || "None"}
 - Tech keywords: ${(companySignals.techKeywords || []).join(", ") || "None"}
+- LinkedIn intent signals: ${(linkedinSignals?.intentSignals || []).map((signal) => signal.label).join(", ") || "None"}
+- ICP segment: ${icpCriteria?.finalizedICP?.buyingMotion || "Unknown"}
+- Company footprint: ${(companyFootprint?.currentRegions || []).join(", ") || "Unknown"}
 - Outreach angle: ${insights.outreachAngle}
 - Recommendation: ${insights.recommendation}
 - Channel focus: ${(insights.bestChannels || []).join(", ")}

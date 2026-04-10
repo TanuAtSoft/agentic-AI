@@ -1,3 +1,8 @@
+const { hasLinkedInScraperApi } = require("./linkedinScraper");
+const { hasIndeedScraperApi, getIndeedIntegrationMode } = require("./indeedScraper");
+const { hasCrunchbaseScraperApi, getCrunchbaseIntegrationMode } = require("./crunchbaseScraper");
+const { getLinkedInIntegrationMode } = require("./linkedinScraper");
+
 function normalizeIndustry(industry) {
   return (industry || "").trim() || "Unknown";
 }
@@ -21,6 +26,10 @@ function choosePrimaryPersona(industry) {
 }
 
 function buildSources(companyName, industry, geography) {
+  const linkedinStatus = hasLinkedInScraperApi() ? "active" : "planned";
+  const linkedinMode = getLinkedInIntegrationMode();
+  const indeedMode = getIndeedIntegrationMode();
+  const crunchbaseMode = getCrunchbaseIntegrationMode();
   const sources = [
     {
       name: "Company website",
@@ -33,9 +42,19 @@ function buildSources(companyName, industry, geography) {
       status: "active"
     },
     {
-      name: "LinkedIn public footprint",
-      purpose: "Infer likely senior stakeholders, titles, and social activity patterns.",
-      status: "planned"
+      name: `Server-side LinkedIn scraping ${linkedinMode === "apify" ? "via Apify" : "API"}`,
+      purpose: "Collect people, hiring, and public footprint signals from LinkedIn surfaces in the backend only.",
+      status: linkedinStatus
+    },
+    {
+      name: `Server-side Indeed hiring ${indeedMode === "apify" ? "via Apify" : "API"}`,
+      purpose: "Track hiring velocity, role mix, and geographic expansion from job market data in the backend.",
+      status: hasIndeedScraperApi() ? "active" : "planned"
+    },
+    {
+      name: `Server-side Crunchbase funding ${crunchbaseMode === "apify" ? "via Apify" : "API"}`,
+      purpose: "Capture funding stage, investor motion, and acquisition intent in the backend.",
+      status: hasCrunchbaseScraperApi() ? "active" : "planned"
     }
   ];
 

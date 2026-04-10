@@ -62,18 +62,58 @@ function detectTechSignals(text) {
   return techKeywords.filter((keyword) => lower.includes(keyword));
 }
 
-async function getCompanySignals(company, _input, searchStrategy) {
+function normalizeSignals(items) {
+  return Array.isArray(items) ? items.filter(Boolean) : [];
+}
+
+async function getCompanySignals(company, _input, searchStrategy, hybridSignals = {}) {
   const siteText = company.websiteSummary?.textSnippet || "";
   const isHiring = detectHiringSignals(siteText);
   const openRoles = extractRoleCandidates(siteText, company.industry);
   const growthKeywords = detectGrowthLanguage(siteText);
   const techKeywords = detectTechSignals(siteText);
+  const linkedinSignals = hybridSignals.linkedin || null;
+  const indeedSignals = hybridSignals.indeed || null;
+  const crunchbaseSignals = hybridSignals.crunchbase || null;
+  const linkedinIntentSignals = normalizeSignals(linkedinSignals?.intentSignals);
+  const indeedHiringSignals = normalizeSignals(indeedSignals?.hiringIntentSignals);
+  const crunchbaseFundingSignals = normalizeSignals(crunchbaseSignals?.fundingIntentSignals);
 
   return {
     hiring: isHiring,
     openRoles,
     growthKeywords,
     techKeywords,
+    linkedinSignals: {
+      source: linkedinSignals?.source || "unavailable",
+      provider: linkedinSignals?.provider || null,
+      headcount: linkedinSignals?.headcount || null,
+      recentPosts: normalizeSignals(linkedinSignals?.recentPosts),
+      hiringSignals: normalizeSignals(linkedinSignals?.hiringSignals),
+      locationSignals: normalizeSignals(linkedinSignals?.locationSignals),
+      intentSignals: linkedinIntentSignals
+    },
+    indeedSignals: {
+      source: indeedSignals?.source || "unavailable",
+      provider: indeedSignals?.provider || null,
+      jobPostings: normalizeSignals(indeedSignals?.jobPostings),
+      roleTitles: normalizeSignals(indeedSignals?.roleTitles),
+      locations: normalizeSignals(indeedSignals?.locations),
+      salaryRanges: normalizeSignals(indeedSignals?.salaryRanges),
+      hiringVelocity: indeedSignals?.hiringVelocity || null,
+      hiringIntentSignals: indeedHiringSignals
+    },
+    crunchbaseSignals: {
+      source: crunchbaseSignals?.source || "unavailable",
+      provider: crunchbaseSignals?.provider || null,
+      fundingRounds: normalizeSignals(crunchbaseSignals?.fundingRounds),
+      investors: normalizeSignals(crunchbaseSignals?.investors),
+      acquisitions: normalizeSignals(crunchbaseSignals?.acquisitions),
+      employeeCount: crunchbaseSignals?.employeeCount || null,
+      lastFundingDate: crunchbaseSignals?.lastFundingDate || null,
+      lastFundingType: crunchbaseSignals?.lastFundingType || null,
+      fundingIntentSignals: crunchbaseFundingSignals
+    },
     hiringTrend: isHiring
       ? "Hiring language detected from live company website content"
       : "No explicit hiring language detected on sampled website content",
@@ -90,6 +130,15 @@ async function getCompanySignals(company, _input, searchStrategy) {
       company.websiteSummary?.description || "No meta description available",
       company.websiteSummary?.title || "No page title available"
     ],
+    linkedinIntentSummary: linkedinIntentSignals.length
+      ? linkedinIntentSignals.map((signal) => signal.description).filter(Boolean)
+      : ["No LinkedIn scraping data available yet"],
+    indeedHiringSummary: indeedHiringSignals.length
+      ? indeedHiringSignals.map((signal) => signal.description).filter(Boolean)
+      : ["No Indeed hiring data available yet"],
+    crunchbaseFundingSummary: crunchbaseFundingSignals.length
+      ? crunchbaseFundingSignals.map((signal) => signal.description).filter(Boolean)
+      : ["No Crunchbase funding data available yet"],
     searchRationale: searchStrategy?.signalChecklist || [],
     dataFreshness: company.websiteSummary?.liveFetched ? "Partially real-time (website-derived)" : "Heuristic"
   };

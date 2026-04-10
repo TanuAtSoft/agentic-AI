@@ -242,6 +242,13 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
 .secondary-button {
   background: rgba(255, 255, 255, 0.92);
   color: var(--accent-strong);
@@ -461,6 +468,106 @@ button:disabled {
 
 .muted-text,
 .empty-state {
+  color: var(--text-muted);
+}
+
+.apify-result {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.apify-preview {
+  border-radius: 20px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(14, 116, 144, 0.12);
+}
+
+.preview-label {
+  display: block;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.apify-preview pre {
+  margin: 0;
+  overflow: auto;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: #18232f;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.hunter-contact-list {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.hunter-subsection h3 {
+  margin: 0 0 12px;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.hunter-table {
+  display: grid;
+  gap: 14px;
+}
+
+.hunter-contact-card {
+  border-radius: 20px;
+  padding: 16px;
+  border: 1px solid rgba(14, 116, 144, 0.12);
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.hunter-contact-stats {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.hunter-contact-stats > div {
+  min-width: 0;
+}
+
+.hunter-contact-stats strong,
+.hunter-contact-stats span,
+.hunter-contact-card .muted-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.hunter-contact-stats strong {
+  display: block;
+}
+
+.hunter-contact-card .decision-title {
+  word-break: break-word;
+}
+
+.hunter-sources {
+  margin-top: 12px;
+}
+
+.source-label {
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+
+.source-meta {
   color: var(--text-muted);
 }
 
