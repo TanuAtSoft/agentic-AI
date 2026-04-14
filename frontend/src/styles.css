@@ -520,6 +520,59 @@ button:disabled {
   gap: 14px;
 }
 
+.hunter-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(14, 116, 144, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.84);
+}
+
+.hunter-email-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1180px;
+}
+
+.hunter-email-table thead th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent-strong);
+  background: rgba(228, 244, 248, 0.85);
+  border-bottom: 1px solid rgba(14, 116, 144, 0.12);
+}
+
+.hunter-email-table tbody tr + tr td {
+  border-top: 1px solid rgba(14, 116, 144, 0.08);
+}
+
+.hunter-email-table td {
+  padding: 14px 16px;
+  vertical-align: top;
+  color: #18232f;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.hunter-email-table td strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.hunter-section-row td {
+  padding: 12px 16px;
+  background: rgba(238, 248, 251, 0.92);
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-top: 1px solid rgba(14, 116, 144, 0.12);
+  border-bottom: 1px solid rgba(14, 116, 144, 0.12);
+}
+
 .hunter-email-list {
   display: grid;
   gap: 14px;
@@ -630,5 +683,45 @@ button:disabled {
 
   .panel-heading h2 {
     font-size: 1.6rem;
+  }
+
+  .hunter-email-table {
+    min-width: 0;
+  }
+
+  .hunter-email-table thead {
+    display: none;
+  }
+
+  .hunter-email-table,
+  .hunter-email-table tbody,
+  .hunter-email-table tr,
+  .hunter-email-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .hunter-email-table tr {
+    padding: 8px 0;
+  }
+
+  .hunter-email-table td {
+    border-top: none;
+    padding: 10px 16px;
+  }
+
+  .hunter-email-table td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent-strong);
+  }
+
+  .hunter-section-row td::before {
+    content: none;
   }
 }

@@ -13,7 +13,7 @@ const workflowSteps = [
   {
     id: "search",
     title: "Decide where to search",
-    description: "Choose company site, web, backend LinkedIn scraping, Indeed hiring, Crunchbase funding, and regional sources based on the account."
+    description: "Choose company site, web, backend LinkedIn scraping, Apollo company enrichment, Indeed hiring, Crunchbase funding, and regional sources based on the account."
   },
   {
     id: "buyers",
@@ -31,6 +31,8 @@ const workflowSteps = [
     description: "Craft personalized email, LinkedIn, and call-opening copy from the synthesized context."
   }
 ];
+
+const SHOW_DEBUG_PANELS = import.meta.env.DEV;
 
 function renderList(items) {
   if (!items?.length) {
@@ -58,6 +60,20 @@ function renderTextList(items) {
       ))}
     </ul>
   );
+}
+
+function formatEmployeeStrength(value) {
+  if (value == null || value === "") {
+    return "Unavailable";
+  }
+
+  const numericValue = Number(value);
+
+  if (Number.isFinite(numericValue)) {
+    return new Intl.NumberFormat("en-US").format(numericValue);
+  }
+
+  return String(value);
 }
 
 export default function App() {
@@ -124,6 +140,10 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!SHOW_DEBUG_PANELS) {
+      return;
+    }
+
     refreshOpenAIDebug();
     refreshConnectorDebug();
   }, []);
@@ -160,6 +180,7 @@ export default function App() {
   const searchStrategy = result?.searchStrategy;
   const company = result?.company;
   const hybridSignals = result?.hybridSignals;
+  const apolloSignals = hybridSignals?.apollo;
   const linkedinSignals = hybridSignals?.linkedin;
   const indeedSignals = hybridSignals?.indeed;
   const crunchbaseSignals = hybridSignals?.crunchbase;
@@ -183,6 +204,8 @@ export default function App() {
   const linkedinIntentSignals = linkedinSignals?.intentSignals || [];
   const indeedHiringSignals = indeedSignals?.hiringIntentSignals || [];
   const crunchbaseFundingSignals = crunchbaseSignals?.fundingIntentSignals || [];
+  const employeeStrength = companySignals?.employeeStrength ?? company?.employeeStrength;
+  const employeeStrengthSource = companySignals?.employeeStrengthSource || "unavailable";
 
   return (
     <main className="page-shell">
@@ -192,7 +215,7 @@ export default function App() {
           <h1>From one company input to a complete outbound brief.</h1>
           <p className="subtitle">
             Give the system a company, industry, size, and geography. It decides where to search,
-            optionally pulls LinkedIn, Indeed, and Crunchbase signals through server-side scraping
+            optionally pulls LinkedIn, Apollo, Indeed, and Crunchbase signals through server-side
             APIs in the backend, identifies likely buyers, selects relevant signals, synthesizes
             insights, and crafts context-aware outreach.
           </p>
@@ -271,9 +294,11 @@ export default function App() {
             <button type="submit" disabled={loading}>
               {loading ? "Running agent..." : "Generate outbound brief"}
             </button>
-            <button type="button" className="secondary-button" onClick={refreshOpenAIDebug}>
-              Refresh diagnostics
-            </button>
+            {SHOW_DEBUG_PANELS ? (
+              <button type="button" className="secondary-button" onClick={refreshOpenAIDebug}>
+                Refresh diagnostics
+              </button>
+            ) : null}
           </div>
 
           <div className="hint-box">
@@ -370,7 +395,15 @@ export default function App() {
                     <span>Geography</span>
                     <strong>{company?.geography}</strong>
                   </div>
+                  <div>
+                    <span>Employee strength</span>
+                    <strong>{formatEmployeeStrength(employeeStrength)}</strong>
+                  </div>
                 </div>
+                <p className="caption">
+                  Apollo source: {apolloSignals?.source || "unavailable"} | Provider:{" "}
+                  {apolloSignals?.provider || "n/a"} | Count source: {employeeStrengthSource}
+                </p>
                 <p className="body-copy">
                   {company?.websiteSummary?.description || "No public company description detected."}
                 </p>
@@ -452,43 +485,132 @@ export default function App() {
                     </p>
                     <div className="hunter-subsection">
                       <h3>Decision maker emails</h3>
-                      <div className="hunter-email-list">
-                        {(hunterIntelligence.decisionMakerEmails || []).length ? (
-                          hunterIntelligence.decisionMakerEmails.map((contact) => (
-                            <article key={contact.email} className="hunter-email-card">
-                              <div className="source-topline">
-                                <h3>{contact.name}</h3>
-                                <span
-                                  className={`status-chip ${
-                                    contact.verificationStatus === "valid" ? "active" : "planned"
-                                  }`}
-                                >
-                                  {contact.confidence || 0}
-                                </span>
-                              </div>
-                              <p className="decision-title">{contact.title || "Unknown title"}</p>
-                              <p className="muted-text">Email: {contact.email}</p>
-                              <p className="muted-text">
-                                Verification: {contact.verificationStatus || "unverified"}
-                              </p>
-                              {contact.linkedinUrl ? (
-                                <a
-                                  className="profile-link"
-                                  href={contact.linkedinUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  View LinkedIn
-                                </a>
+                      {((hunterIntelligence.decisionMakerEmails || []).length ||
+                        (hunterIntelligence.contacts || []).length) ? (
+                        <div className="hunter-table-wrap">
+                          <table className="hunter-email-table">
+                            <thead>
+                              <tr>
+                                <th>Group</th>
+                                <th>Name</th>
+                                <th>Title</th>
+                                <th>Email</th>
+                                <th>Confidence</th>
+                                <th>Verification</th>
+                                <th>LinkedIn</th>
+                                <th>Seniority</th>
+                                <th>Department</th>
+                                <th>Twitter</th>
+                                <th>Phone</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(hunterIntelligence.decisionMakerEmails || []).length ? (
+                                <>
+                                  <tr className="hunter-section-row">
+                                    <td colSpan="11">Decision maker emails</td>
+                                  </tr>
+                                  {hunterIntelligence.decisionMakerEmails.map((contact) => (
+                                    <tr key={`decision-${contact.email}`}>
+                                      <td data-label="Group">Decision maker</td>
+                                      <td data-label="Name">
+                                        <strong>{contact.name}</strong>
+                                      </td>
+                                      <td data-label="Title">{contact.title || "Unknown title"}</td>
+                                      <td data-label="Email">{contact.email}</td>
+                                      <td data-label="Confidence">
+                                        <span
+                                          className={`status-chip ${
+                                            contact.verificationStatus === "valid"
+                                              ? "active"
+                                              : "planned"
+                                          }`}
+                                        >
+                                          {contact.confidence || 0}
+                                        </span>
+                                      </td>
+                                      <td data-label="Verification">
+                                        {contact.verificationStatus || "unverified"}
+                                      </td>
+                                      <td data-label="LinkedIn">
+                                        {contact.linkedinUrl ? (
+                                          <a
+                                            className="profile-link"
+                                            href={contact.linkedinUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                          >
+                                            View LinkedIn
+                                          </a>
+                                        ) : (
+                                          "Unavailable"
+                                        )}
+                                      </td>
+                                      <td data-label="Seniority">{contact.seniority || "n/a"}</td>
+                                      <td data-label="Department">{contact.department || "n/a"}</td>
+                                      <td data-label="Twitter">{contact.twitter || "Unavailable"}</td>
+                                      <td data-label="Phone">{contact.phoneNumber || "Unavailable"}</td>
+                                    </tr>
+                                  ))}
+                                </>
                               ) : null}
-                            </article>
-                          ))
-                        ) : (
-                          <p className="empty-state">
-                            No decision maker emails were returned by Hunter for this search.
-                          </p>
-                        )}
-                      </div>
+                              {(hunterIntelligence.contacts || []).length ? (
+                                <>
+                                  <tr className="hunter-section-row">
+                                    <td colSpan="11">All discovered contacts</td>
+                                  </tr>
+                                  {hunterIntelligence.contacts.map((contact) => (
+                                    <tr key={`contact-${contact.email}`}>
+                                      <td data-label="Group">Contact</td>
+                                      <td data-label="Name">
+                                        <strong>{contact.name}</strong>
+                                      </td>
+                                      <td data-label="Title">{contact.title || "Unknown title"}</td>
+                                      <td data-label="Email">{contact.email}</td>
+                                      <td data-label="Confidence">
+                                        <span
+                                          className={`status-chip ${
+                                            contact.verificationStatus === "valid"
+                                              ? "active"
+                                              : "planned"
+                                          }`}
+                                        >
+                                          {contact.confidence || 0}
+                                        </span>
+                                      </td>
+                                      <td data-label="Verification">
+                                        {contact.verificationStatus || "unverified"}
+                                      </td>
+                                      <td data-label="LinkedIn">
+                                        {contact.linkedinUrl ? (
+                                          <a
+                                            className="profile-link"
+                                            href={contact.linkedinUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                          >
+                                            View LinkedIn
+                                          </a>
+                                        ) : (
+                                          "Unavailable"
+                                        )}
+                                      </td>
+                                      <td data-label="Seniority">{contact.seniority || "n/a"}</td>
+                                      <td data-label="Department">{contact.department || "n/a"}</td>
+                                      <td data-label="Twitter">{contact.twitter || "Unavailable"}</td>
+                                      <td data-label="Phone">{contact.phoneNumber || "Unavailable"}</td>
+                                    </tr>
+                                  ))}
+                                </>
+                              ) : null}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <p className="empty-state">
+                          No decision maker emails were returned by Hunter for this search.
+                        </p>
+                      )}
                     </div>
                     <div className="hunter-contact-list">
                       {(hunterIntelligence.decisionMakerContacts || []).length ? (
@@ -534,65 +656,6 @@ export default function App() {
                           </div>
                         </div>
                       ) : null}
-
-                      <div className="hunter-subsection">
-                        <h3>All discovered contacts</h3>
-                        <div className="hunter-table">
-                          {(hunterIntelligence.contacts || []).map((contact) => (
-                            <article key={contact.email} className="hunter-contact-card">
-                              <div className="source-topline">
-                                <h3>{contact.name}</h3>
-                                <span className={`status-chip ${contact.verificationStatus === "valid" ? "active" : "planned"}`}>
-                                  {contact.confidence || 0}
-                                </span>
-                              </div>
-                              <p className="decision-title">{contact.title || "Unknown title"}</p>
-                              <div className="hunter-contact-stats">
-                                <div>
-                                  <span>Email</span>
-                                  <strong>{contact.email}</strong>
-                                </div>
-                                <div>
-                                  <span>Seniority</span>
-                                  <strong>{contact.seniority || "n/a"}</strong>
-                                </div>
-                                <div>
-                                  <span>Department</span>
-                                  <strong>{contact.department || "n/a"}</strong>
-                                </div>
-                                <div>
-                                  <span>Verification</span>
-                                  <strong>{contact.verificationStatus || "unverified"}</strong>
-                                </div>
-                              </div>
-                              <p className="muted-text">
-                                LinkedIn: {contact.linkedinUrl || "Unavailable"}
-                              </p>
-                              <p className="muted-text">
-                                Twitter: {contact.twitter || "Unavailable"} | Phone:{" "}
-                                {contact.phoneNumber || "Unavailable"}
-                              </p>
-                              {contact.sources?.length ? (
-                                <div className="hunter-sources">
-                                  <span className="source-label">Sources</span>
-                                  <ul className="detail-list">
-                                    {contact.sources.map((source) => (
-                                      <li key={`${contact.email}-${source.uri}`}>
-                                        <strong>{source.domain}</strong>: {source.uri}
-                                        <span className="source-meta">
-                                          {" "}
-                                          ({source.last_seen_on || "unknown"} | still on page:{" "}
-                                          {String(source.still_on_page)})
-                                        </span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              ) : null}
-                            </article>
-                          ))}
-                        </div>
-                      </div>
                     </div>
                   </>
                 ) : (
@@ -624,6 +687,10 @@ export default function App() {
                   <div>
                     <span>Recommendation</span>
                     <strong>{insights?.recommendation || "Use low-friction CTA"}</strong>
+                  </div>
+                  <div>
+                    <span>Employee strength</span>
+                    <strong>{formatEmployeeStrength(employeeStrength)}</strong>
                   </div>
                 </div>
                 <div className="analysis-banner">
@@ -814,124 +881,142 @@ export default function App() {
             </>
           ) : null}
 
-          <div className="panel">
-            <div className="panel-heading">
-              <p className="eyebrow">Diagnostics</p>
-              <h2>Runtime health</h2>
-            </div>
-            {openaiDebug ? (
-              <div className="stats-grid compact">
-                <div>
-                  <span>Configured</span>
-                  <strong>{String(openaiDebug.openaiConfigured)}</strong>
+          {SHOW_DEBUG_PANELS ? (
+            <>
+              <div className="panel">
+                <div className="panel-heading">
+                  <p className="eyebrow">Diagnostics</p>
+                  <h2>Runtime health</h2>
                 </div>
-                <div>
-                  <span>Status</span>
-                  <strong>{openaiDebug.diagnostics?.lastStatus || "unknown"}</strong>
-                </div>
-                <div>
-                  <span>Attempts</span>
-                  <strong>{openaiDebug.diagnostics?.totalAttempts || 0}</strong>
-                </div>
-                <div>
-                  <span>Successes</span>
-                  <strong>{openaiDebug.diagnostics?.successCount || 0}</strong>
-                </div>
+                {openaiDebug ? (
+                  <div className="stats-grid compact">
+                    <div>
+                      <span>Configured</span>
+                      <strong>{String(openaiDebug.openaiConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>Status</span>
+                      <strong>{openaiDebug.diagnostics?.lastStatus || "unknown"}</strong>
+                    </div>
+                    <div>
+                      <span>Attempts</span>
+                      <strong>{openaiDebug.diagnostics?.totalAttempts || 0}</strong>
+                    </div>
+                    <div>
+                      <span>Successes</span>
+                      <strong>{openaiDebug.diagnostics?.successCount || 0}</strong>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="empty-state">
+                    Use "Refresh diagnostics" to inspect backend runtime health.
+                  </p>
+                )}
               </div>
-            ) : (
-              <p className="empty-state">Use "Refresh diagnostics" to inspect backend runtime health.</p>
-            )}
-          </div>
 
-          <div className="panel">
-            <div className="panel-heading">
-              <p className="eyebrow">Connectors</p>
-              <h2>Hybrid integration status</h2>
-            </div>
-            {connectorDebug ? (
-                <div className="stats-grid compact">
-                  <div>
-                    <span>Apify</span>
-                    <strong>{String(connectorDebug.apifyConfigured)}</strong>
-                  </div>
-                  <div>
-                    <span>Hunter API</span>
-                    <strong>{String(connectorDebug.hunterConfigured)}</strong>
-                  </div>
-                  <div>
-                    <span>LinkedIn API</span>
-                    <strong>{String(connectorDebug.linkedinScraperConfigured)}</strong>
-                  </div>
-                  <div>
-                    <span>Indeed API</span>
-                    <strong>{String(connectorDebug.indeedScraperConfigured)}</strong>
-                  </div>
-                  <div>
-                    <span>Crunchbase API</span>
-                    <strong>{String(connectorDebug.crunchbaseScraperConfigured)}</strong>
-                  </div>
-                  <div>
-                    <span>OpenAI</span>
-                    <strong>{String(connectorDebug.openaiConfigured)}</strong>
-                  </div>
-                  <div>
-                    <span>LinkedIn mode</span>
-                    <strong>{connectorDebug.linkedinScraperMode || "server-side"}</strong>
-                  </div>
-                  <div>
-                    <span>Indeed mode</span>
-                    <strong>{connectorDebug.indeedScraperMode || "server-side"}</strong>
-                  </div>
-                  <div>
-                    <span>Crunchbase mode</span>
-                    <strong>{connectorDebug.crunchbaseScraperMode || "server-side"}</strong>
-                  </div>
-                  <div>
-                    <span>Mode</span>
-                    <strong>hybrid</strong>
-                  </div>
+              <div className="panel">
+                <div className="panel-heading">
+                  <p className="eyebrow">Connectors</p>
+                  <h2>Hybrid integration status</h2>
                 </div>
-            ) : (
-              <p className="empty-state">Use "Refresh diagnostics" to inspect connector status.</p>
-            )}
-            <div className="action-row">
-              <button type="button" className="secondary-button" onClick={refreshConnectorDebug}>
-                Refresh connector status
-              </button>
-              <button type="button" onClick={runApifySoftprodigyTest} disabled={apifyLoading}>
-                {apifyLoading ? "Running Apify test..." : "Run SoftProdigy Apify test"}
-              </button>
-            </div>
-            {apifyError ? <p className="error">Apify error: {apifyError}</p> : null}
-            {apifyDebug ? (
-              <div className="apify-result">
-                <div className="stats-grid compact">
-                  <div>
-                    <span>Actor</span>
-                    <strong>{apifyDebug.actorId || "unknown"}</strong>
+                {connectorDebug ? (
+                  <div className="stats-grid compact">
+                    <div>
+                      <span>Apify</span>
+                      <strong>{String(connectorDebug.apifyConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>Hunter API</span>
+                      <strong>{String(connectorDebug.hunterConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>LinkedIn API</span>
+                      <strong>{String(connectorDebug.linkedinScraperConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>Indeed API</span>
+                      <strong>{String(connectorDebug.indeedScraperConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>Crunchbase API</span>
+                      <strong>{String(connectorDebug.crunchbaseScraperConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>Apollo API</span>
+                      <strong>{String(connectorDebug.apolloConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>OpenAI</span>
+                      <strong>{String(connectorDebug.openaiConfigured)}</strong>
+                    </div>
+                    <div>
+                      <span>LinkedIn mode</span>
+                      <strong>{connectorDebug.linkedinScraperMode || "server-side"}</strong>
+                    </div>
+                    <div>
+                      <span>Indeed mode</span>
+                      <strong>{connectorDebug.indeedScraperMode || "server-side"}</strong>
+                    </div>
+                    <div>
+                      <span>Crunchbase mode</span>
+                      <strong>{connectorDebug.crunchbaseScraperMode || "server-side"}</strong>
+                    </div>
+                    <div>
+                      <span>Apollo mode</span>
+                      <strong>{connectorDebug.apolloIntegrationMode || "server-side"}</strong>
+                    </div>
+                    <div>
+                      <span>Mode</span>
+                      <strong>hybrid</strong>
+                    </div>
                   </div>
-                  <div>
-                    <span>Status</span>
-                    <strong>{apifyDebug.run?.status || "unknown"}</strong>
-                  </div>
-                  <div>
-                    <span>Items</span>
-                    <strong>{apifyDebug.items?.length || 0}</strong>
-                  </div>
-                  <div>
-                    <span>Source</span>
-                    <strong>{apifyDebug.source || "apify"}</strong>
-                  </div>
+                ) : (
+                  <p className="empty-state">
+                    Use "Refresh diagnostics" to inspect connector status.
+                  </p>
+                )}
+                <div className="action-row">
+                  <button type="button" className="secondary-button" onClick={refreshConnectorDebug}>
+                    Refresh connector status
+                  </button>
+                  <button type="button" onClick={runApifySoftprodigyTest} disabled={apifyLoading}>
+                    {apifyLoading ? "Running Apify test..." : "Run SoftProdigy Apify test"}
+                  </button>
                 </div>
-                <div className="apify-preview">
-                  <span className="preview-label">First item preview</span>
-                  <pre>{JSON.stringify(apifyDebug.items?.[0] || {}, null, 2)}</pre>
-                </div>
+                {apifyError ? <p className="error">Apify error: {apifyError}</p> : null}
+                {apifyDebug ? (
+                  <div className="apify-result">
+                    <div className="stats-grid compact">
+                      <div>
+                        <span>Actor</span>
+                        <strong>{apifyDebug.actorId || "unknown"}</strong>
+                      </div>
+                      <div>
+                        <span>Status</span>
+                        <strong>{apifyDebug.run?.status || "unknown"}</strong>
+                      </div>
+                      <div>
+                        <span>Items</span>
+                        <strong>{apifyDebug.items?.length || 0}</strong>
+                      </div>
+                      <div>
+                        <span>Source</span>
+                        <strong>{apifyDebug.source || "apify"}</strong>
+                      </div>
+                    </div>
+                    <div className="apify-preview">
+                      <span className="preview-label">First item preview</span>
+                      <pre>{JSON.stringify(apifyDebug.items?.[0] || {}, null, 2)}</pre>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="empty-state">
+                    Run the Apify test to preview the dataset returned by the backend.
+                  </p>
+                )}
               </div>
-            ) : (
-              <p className="empty-state">Run the Apify test to preview the dataset returned by the backend.</p>
-            )}
-          </div>
+            </>
+          ) : null}
         </section>
       </section>
     </main>
