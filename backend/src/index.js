@@ -232,4 +232,5 @@ app.listen(PORT, () => {
       "APOLLO_API_KEY or APOLLO_MASTER_KEY is missing in backend/.env. Apollo employee strength enrichment will be unavailable."
     );
   }
+  // Deploy trigger: keep Render backend redeploys in sync with Apollo configuration changes.
 });
