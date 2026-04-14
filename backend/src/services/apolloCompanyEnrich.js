@@ -86,7 +86,7 @@ async function fetchApolloCompanySignals({ company }) {
       params: { domain },
       timeout: Number(process.env.APOLLO_API_TIMEOUT_MS || 12000),
       headers: {
-        "X-Api-Key": apiKey,
+        Authorization: `Bearer ${apiKey}`,
         accept: "application/json",
         "Cache-Control": "no-cache"
       }
