@@ -36,6 +36,27 @@ function toNumber(value) {
   return Number.isFinite(parsed) ? parsed : value;
 }
 
+function extractApolloOrganization(data) {
+  return data?.organization || data?.company || data?.account || data?.data?.organization || data;
+}
+
+function extractApolloEmployeeStrength(org) {
+  const numericStrength =
+    org?.estimated_num_employees ??
+    org?.estimatedNumEmployees ??
+    org?.employee_count ??
+    org?.employeeCount ??
+    org?.num_employees ??
+    org?.numEmployees ??
+    null;
+
+  if (numericStrength != null) {
+    return toNumber(numericStrength);
+  }
+
+  return org?.employee_range || org?.employeeRange || null;
+}
+
 async function fetchApolloCompanySignals({ company }) {
   assertServerSide();
 
@@ -61,24 +82,28 @@ async function fetchApolloCompanySignals({ company }) {
   }
 
   try {
-    const response = await axios.get("https://api.apollo.io/v1/organizations/enrich", {
+    const response = await axios.get("https://api.apollo.io/api/v1/organizations/enrich", {
       params: { domain },
       timeout: Number(process.env.APOLLO_API_TIMEOUT_MS || 12000),
       headers: {
-        "X-Api-Key": apiKey
+        "X-Api-Key": apiKey,
+        accept: "application/json",
+        "Cache-Control": "no-cache"
       }
     });
 
-    const org = response.data?.organization || {};
+    const org = extractApolloOrganization(response.data);
+    const employeeStrength = extractApolloEmployeeStrength(org);
 
     return {
       ok: true,
       source: "apollo-organization-enrich",
       provider: "apollo",
       domain,
-      organizationName: org.name || company.name || "",
-      estimatedNumEmployees: toNumber(org.estimated_num_employees),
-      employeeRange: org.employee_range || null
+      organizationName: org?.name || org?.organization_name || company.name || "",
+      estimatedNumEmployees: typeof employeeStrength === "number" ? employeeStrength : null,
+      employeeRange: org?.employee_range || org?.employeeRange || null,
+      rawEmployeeStrength: employeeStrength
     };
   } catch (error) {
     return {

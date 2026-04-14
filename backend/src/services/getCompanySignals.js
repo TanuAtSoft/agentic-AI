@@ -78,12 +78,15 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
   const crunchbaseSignals = hybridSignals.crunchbase || null;
   const apolloEmployeeStrength =
     apolloSignals?.estimatedNumEmployees ?? apolloSignals?.estimated_num_employees ?? null;
+  const apolloEmployeeRange = apolloSignals?.employeeRange || null;
   const fallbackEmployeeStrength =
     linkedinSignals?.headcount || crunchbaseSignals?.employeeCount || null;
   let employeeStrengthSource = "unavailable";
 
   if (apolloEmployeeStrength != null) {
     employeeStrengthSource = "apollo";
+  } else if (apolloEmployeeRange) {
+    employeeStrengthSource = "apollo-range";
   } else if (linkedinSignals?.headcount) {
     employeeStrengthSource = "linkedin";
   } else if (crunchbaseSignals?.employeeCount) {
@@ -98,7 +101,7 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
     openRoles,
     growthKeywords,
     techKeywords,
-    employeeStrength: apolloEmployeeStrength ?? fallbackEmployeeStrength,
+    employeeStrength: apolloEmployeeStrength ?? apolloEmployeeRange ?? fallbackEmployeeStrength,
     employeeStrengthSource,
     apolloSignals: {
       source: apolloSignals?.source || "unavailable",
@@ -106,7 +109,8 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
       domain: apolloSignals?.domain || null,
       organizationName: apolloSignals?.organizationName || null,
       estimatedNumEmployees: apolloEmployeeStrength,
-      employeeRange: apolloSignals?.employeeRange || null
+      employeeRange: apolloEmployeeRange,
+      rawEmployeeStrength: apolloSignals?.rawEmployeeStrength ?? null
     },
     linkedinSignals: {
       source: linkedinSignals?.source || "unavailable",
