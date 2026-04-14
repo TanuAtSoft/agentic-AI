@@ -76,6 +76,7 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
   const linkedinSignals = hybridSignals.linkedin || null;
   const indeedSignals = hybridSignals.indeed || null;
   const crunchbaseSignals = hybridSignals.crunchbase || null;
+  const apolloEmployeeStrengthRaw = apolloSignals?.rawEmployeeStrength ?? null;
   const apolloEmployeeStrength =
     apolloSignals?.estimatedNumEmployees ?? apolloSignals?.estimated_num_employees ?? null;
   const apolloEmployeeRange = apolloSignals?.employeeRange || null;
@@ -87,6 +88,8 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
     employeeStrengthSource = "apollo";
   } else if (apolloEmployeeRange) {
     employeeStrengthSource = "apollo-range";
+  } else if (apolloEmployeeStrengthRaw != null) {
+    employeeStrengthSource = "apollo-raw";
   } else if (linkedinSignals?.headcount) {
     employeeStrengthSource = "linkedin";
   } else if (crunchbaseSignals?.employeeCount) {
@@ -101,7 +104,8 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
     openRoles,
     growthKeywords,
     techKeywords,
-    employeeStrength: apolloEmployeeStrength ?? apolloEmployeeRange ?? fallbackEmployeeStrength,
+    employeeStrength:
+      apolloEmployeeStrength ?? apolloEmployeeRange ?? apolloEmployeeStrengthRaw ?? fallbackEmployeeStrength,
     employeeStrengthSource,
     apolloSignals: {
       source: apolloSignals?.source || "unavailable",
@@ -110,7 +114,7 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
       organizationName: apolloSignals?.organizationName || null,
       estimatedNumEmployees: apolloEmployeeStrength,
       employeeRange: apolloEmployeeRange,
-      rawEmployeeStrength: apolloSignals?.rawEmployeeStrength ?? null
+      rawEmployeeStrength: apolloEmployeeStrengthRaw
     },
     linkedinSignals: {
       source: linkedinSignals?.source || "unavailable",

@@ -102,7 +102,7 @@ async function fetchApolloCompanySignals({ company }) {
       domain,
       organizationName: org?.name || org?.organization_name || company.name || "",
       estimatedNumEmployees: typeof employeeStrength === "number" ? employeeStrength : null,
-      employeeRange: org?.employee_range || org?.employeeRange || null,
+      employeeRange: org?.employee_range || org?.employeeRange || (typeof employeeStrength === "string" ? employeeStrength : null),
       rawEmployeeStrength: employeeStrength
     };
   } catch (error) {

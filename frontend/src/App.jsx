@@ -204,7 +204,12 @@ export default function App() {
   const linkedinIntentSignals = linkedinSignals?.intentSignals || [];
   const indeedHiringSignals = indeedSignals?.hiringIntentSignals || [];
   const crunchbaseFundingSignals = crunchbaseSignals?.fundingIntentSignals || [];
-  const employeeStrength = companySignals?.employeeStrength ?? company?.employeeStrength;
+  const employeeStrength =
+    companySignals?.employeeStrength ??
+    companySignals?.apolloSignals?.estimatedNumEmployees ??
+    companySignals?.apolloSignals?.rawEmployeeStrength ??
+    companySignals?.apolloSignals?.employeeRange ??
+    company?.employeeStrength;
   const employeeStrengthSource = companySignals?.employeeStrengthSource || "unavailable";
 
   return (
