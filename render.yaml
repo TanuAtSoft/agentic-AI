@@ -18,6 +18,12 @@ services:
         sync: false
       - key: HUNTER_API_KEY
         sync: false
+      - key: APOLLO_API_KEY
+        sync: false
+      - key: APOLLO_MASTER_KEY
+        sync: false
+      - key: APOLLO_API_TIMEOUT_MS
+        value: "12000"
       - key: SOFTPRODIGY_APIFY_ACTOR_ID
         value: GWVs761IEVnlW4SYp
       - key: SOFTPRODIGY_APIFY_TIMEOUT_SECONDS

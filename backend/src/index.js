@@ -8,6 +8,7 @@ const { getOpenAIDiagnostics, callWithOpenAI } = require("./services/openaiClien
 const { runWebSearch } = require("./services/webSearch");
 const { hasApifyToken, runApifyActor } = require("./services/apifyClient");
 const { hasHunterApiKey } = require("./services/hunterDomainSearch");
+const { hasApolloApiKey } = require("./services/apolloCompanyEnrich");
 
 const envPath = path.join(__dirname, "..", ".env");
 const envLocalPath = path.join(__dirname, "..", ".env.local");
@@ -44,14 +45,17 @@ app.get("/debug/connectors", (_req, res) => {
   const { hasLinkedInScraperApi, getLinkedInIntegrationMode } = require("./services/linkedinScraper");
   const { hasIndeedScraperApi, getIndeedIntegrationMode } = require("./services/indeedScraper");
   const { hasCrunchbaseScraperApi, getCrunchbaseIntegrationMode } = require("./services/crunchbaseScraper");
+  const { getApolloIntegrationMode } = require("./services/apolloCompanyEnrich");
 
   res.json({
     openaiConfigured: HAS_OPENAI_KEY,
     apifyConfigured: HAS_APIFY_TOKEN,
     hunterConfigured: HAS_HUNTER_KEY,
+    apolloConfigured: hasApolloApiKey(),
     linkedinScraperConfigured: hasLinkedInScraperApi(),
     indeedScraperConfigured: hasIndeedScraperApi(),
     crunchbaseScraperConfigured: hasCrunchbaseScraperApi(),
+    apolloIntegrationMode: getApolloIntegrationMode(),
     linkedinScraperMode: getLinkedInIntegrationMode(),
     indeedScraperMode: getIndeedIntegrationMode(),
     crunchbaseScraperMode: getCrunchbaseIntegrationMode()
@@ -222,5 +226,10 @@ app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
   if (!HAS_OPENAI_KEY) {
     console.warn("OPENAI_API_KEY is missing in backend/.env. The API will use fallback behavior.");
+  }
+  if (!hasApolloApiKey()) {
+    console.warn(
+      "APOLLO_API_KEY or APOLLO_MASTER_KEY is missing in backend/.env. Apollo employee strength enrichment will be unavailable."
+    );
   }
 });

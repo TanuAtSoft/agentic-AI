@@ -4,6 +4,7 @@ const { findDecisionMakers } = require("../services/findDecisionMakers");
 const { getCompanySignals } = require("../services/getCompanySignals");
 const { analyzeSignals } = require("../services/analyzeSignals");
 const { generatePersonalizedContent } = require("../services/generatePersonalizedContent");
+const { fetchApolloCompanySignals } = require("../services/apolloCompanyEnrich");
 const { fetchLinkedInCompanySignals } = require("../services/linkedinScraper");
 const { fetchIndeedCompanySignals } = require("../services/indeedScraper");
 const { fetchCrunchbaseCompanySignals } = require("../services/crunchbaseScraper");
@@ -18,37 +19,50 @@ async function leadPipeline(input) {
     website: company.website,
     companyName: company.name
   });
-  const [linkedinSignals, indeedSignals, crunchbaseSignals] = await Promise.all([
+  const [apolloSignals, linkedinSignals, indeedSignals, crunchbaseSignals] = await Promise.all([
+    fetchApolloCompanySignals({ company, input }),
     fetchLinkedInCompanySignals({ company, input }),
     fetchIndeedCompanySignals({ company, input }),
     fetchCrunchbaseCompanySignals({ company, input })
   ]);
 
   const hybridSignals = {
+    apollo: apolloSignals.ok ? apolloSignals : null,
     linkedin: linkedinSignals.ok ? linkedinSignals : null,
     indeed: indeedSignals.ok ? indeedSignals : null,
     crunchbase: crunchbaseSignals.ok ? crunchbaseSignals : null
   };
 
   const companySignals = await getCompanySignals(company, input, searchStrategy, hybridSignals);
+  const companyWithApollo = {
+    ...company,
+    employeeStrength: companySignals.employeeStrength,
+    employeeStrengthSource: companySignals.employeeStrengthSource,
+    apolloEmployeeRange: hybridSignals.apollo?.employeeRange || null
+  };
   const icpCriteria = buildIcpCriteria({
-    company,
+    company: companyWithApollo,
     input,
     linkedinSignals: hybridSignals.linkedin,
     companySignals
   });
   const companyFootprint = buildCompanyFootprint({
-    company,
+    company: companyWithApollo,
     input,
     linkedinSignals: hybridSignals.linkedin,
     companySignals
   });
-  const decisionMakers = await findDecisionMakers(company, input, searchStrategy, hybridSignals.linkedin);
+  const decisionMakers = await findDecisionMakers(
+    companyWithApollo,
+    input,
+    searchStrategy,
+    hybridSignals.linkedin
+  );
   const decisionMakersWithEmails = hunterSearch.ok
     ? attachHunterEmails(decisionMakers, hunterSearch.contacts)
     : decisionMakers;
   const insights = await analyzeSignals({
-    company,
+    company: companyWithApollo,
     decisionMakers: decisionMakersWithEmails,
     companySignals,
     searchStrategy,
@@ -58,7 +72,7 @@ async function leadPipeline(input) {
     linkedinSignals: hybridSignals.linkedin
   });
   const personalizedMessage = await generatePersonalizedContent({
-    company,
+    company: companyWithApollo,
     decisionMakers: decisionMakersWithEmails,
     companySignals,
     insights,
@@ -72,7 +86,7 @@ async function leadPipeline(input) {
   return {
     input,
     searchStrategy,
-    company,
+    company: companyWithApollo,
     hybridSignals,
     decisionMakers: decisionMakersWithEmails,
     hunterIntelligence: hunterSearch.ok
@@ -109,6 +123,9 @@ async function leadPipeline(input) {
         linkedinSignals.ok
           ? `${linkedinSignals.source} (server-side)`
           : "linkedin-scraper-api (server-side unavailable)",
+        apolloSignals.ok
+          ? `${apolloSignals.source} (server-side)`
+          : "apollo-organization-enrich (server-side unavailable)",
         indeedSignals.ok
           ? `${indeedSignals.source} (server-side)`
           : "indeed-scraper-api (server-side unavailable)",
@@ -125,6 +142,9 @@ async function leadPipeline(input) {
         linkedinSignals.ok
           ? "LinkedIn scraping API is connected on the backend and used when available."
           : "LinkedIn scraping API is not configured, so backend LinkedIn signals fall back to heuristics.",
+        apolloSignals.ok
+          ? "Apollo organization enrichment is connected on the backend and used when available."
+          : "Apollo organization enrichment is not configured, so employee strength falls back to other public signals.",
         indeedSignals.ok
           ? "Indeed hiring data is connected on the backend and used when available."
           : "Indeed hiring data is not configured, so backend hiring trends fall back to heuristics.",

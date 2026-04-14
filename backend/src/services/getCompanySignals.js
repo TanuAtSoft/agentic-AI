@@ -72,9 +72,23 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
   const openRoles = extractRoleCandidates(siteText, company.industry);
   const growthKeywords = detectGrowthLanguage(siteText);
   const techKeywords = detectTechSignals(siteText);
+  const apolloSignals = hybridSignals.apollo || null;
   const linkedinSignals = hybridSignals.linkedin || null;
   const indeedSignals = hybridSignals.indeed || null;
   const crunchbaseSignals = hybridSignals.crunchbase || null;
+  const apolloEmployeeStrength =
+    apolloSignals?.estimatedNumEmployees ?? apolloSignals?.estimated_num_employees ?? null;
+  const fallbackEmployeeStrength =
+    linkedinSignals?.headcount || crunchbaseSignals?.employeeCount || null;
+  let employeeStrengthSource = "unavailable";
+
+  if (apolloEmployeeStrength != null) {
+    employeeStrengthSource = "apollo";
+  } else if (linkedinSignals?.headcount) {
+    employeeStrengthSource = "linkedin";
+  } else if (crunchbaseSignals?.employeeCount) {
+    employeeStrengthSource = "crunchbase";
+  }
   const linkedinIntentSignals = normalizeSignals(linkedinSignals?.intentSignals);
   const indeedHiringSignals = normalizeSignals(indeedSignals?.hiringIntentSignals);
   const crunchbaseFundingSignals = normalizeSignals(crunchbaseSignals?.fundingIntentSignals);
@@ -84,6 +98,16 @@ async function getCompanySignals(company, _input, searchStrategy, hybridSignals 
     openRoles,
     growthKeywords,
     techKeywords,
+    employeeStrength: apolloEmployeeStrength ?? fallbackEmployeeStrength,
+    employeeStrengthSource,
+    apolloSignals: {
+      source: apolloSignals?.source || "unavailable",
+      provider: apolloSignals?.provider || null,
+      domain: apolloSignals?.domain || null,
+      organizationName: apolloSignals?.organizationName || null,
+      estimatedNumEmployees: apolloEmployeeStrength,
+      employeeRange: apolloSignals?.employeeRange || null
+    },
     linkedinSignals: {
       source: linkedinSignals?.source || "unavailable",
       provider: linkedinSignals?.provider || null,
