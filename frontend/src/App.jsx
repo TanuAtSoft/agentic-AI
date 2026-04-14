@@ -426,6 +426,48 @@ export default function App() {
 
               <div className="panel">
                 <div className="panel-heading">
+                  <p className="eyebrow">Production status</p>
+                  <h2>Hybrid integration status</h2>
+                </div>
+                <div className="stats-grid compact">
+                  <div>
+                    <span>Apollo</span>
+                    <strong>{apolloSignals?.provider === "apollo" ? "Connected" : "Unavailable"}</strong>
+                  </div>
+                  <div>
+                    <span>Apollo source</span>
+                    <strong>{apolloSignals?.source || "unavailable"}</strong>
+                  </div>
+                  <div>
+                    <span>Employee count source</span>
+                    <strong>{employeeStrengthSource}</strong>
+                  </div>
+                  <div>
+                    <span>LinkedIn</span>
+                    <strong>{linkedinSignals?.provider ? "Connected" : "Unavailable"}</strong>
+                  </div>
+                  <div>
+                    <span>Indeed</span>
+                    <strong>{indeedSignals?.provider ? "Connected" : "Unavailable"}</strong>
+                  </div>
+                  <div>
+                    <span>Crunchbase</span>
+                    <strong>{crunchbaseSignals?.provider ? "Connected" : "Unavailable"}</strong>
+                  </div>
+                  <div>
+                    <span>Hunter</span>
+                    <strong>{hunterIntelligence?.source ? "Connected" : "Unavailable"}</strong>
+                  </div>
+                </div>
+                <p className="caption">
+                  Apollo organization: {companySignals?.apolloSignals?.organizationName || company?.name || "unavailable"} | 
+                  Raw strength:{" "}
+                  {companySignals?.apolloSignals?.rawEmployeeStrength ?? "unavailable"}
+                </p>
+              </div>
+
+              <div className="panel">
+                <div className="panel-heading">
                   <p className="eyebrow">Decision-makers</p>
                   <h2>Who to reach out to</h2>
                 </div>
