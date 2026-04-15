@@ -3,12 +3,16 @@ const fs = require("fs");
 const dotenv = require("dotenv");
 const express = require("express");
 const cors = require("cors");
-const { leadPipeline } = require("./pipeline/leadPipeline");
 const { getOpenAIDiagnostics, callWithOpenAI } = require("./services/openaiClient");
 const { runWebSearch } = require("./services/webSearch");
 const { hasApifyToken, runApifyActor } = require("./services/apifyClient");
 const { hasHunterApiKey } = require("./services/hunterDomainSearch");
 const { hasApolloApiKey } = require("./services/apolloCompanyEnrich");
+const {
+  DEFAULT_INCLUDED_ROLE_KEYWORDS,
+  DEFAULT_EXCLUDED_ROLE_KEYWORDS,
+  searchDecisionMakerLeads
+} = require("./services/decisionMakerSearch");
 
 const envPath = path.join(__dirname, "..", ".env");
 const envLocalPath = path.join(__dirname, "..", ".env.local");
@@ -59,6 +63,13 @@ app.get("/debug/connectors", (_req, res) => {
     linkedinScraperMode: getLinkedInIntegrationMode(),
     indeedScraperMode: getIndeedIntegrationMode(),
     crunchbaseScraperMode: getCrunchbaseIntegrationMode()
+  });
+});
+
+app.get("/config/decision-maker-roles", (_req, res) => {
+  res.json({
+    included: DEFAULT_INCLUDED_ROLE_KEYWORDS,
+    excluded: DEFAULT_EXCLUDED_ROLE_KEYWORDS
   });
 });
 
@@ -150,37 +161,36 @@ app.get("/debug/test-openai", async (_req, res) => {
   }
 });
 
-app.post("/lead", async (req, res) => {
+async function handleDecisionMakerSearch(req, res) {
   try {
-    const { companyName, industry, companySize, geography } = req.body || {};
+    const payload = req.body || {};
 
-    console.log("[Frontend -> /lead Payload]", {
+    console.log("[Frontend -> /search Payload]", {
       at: new Date().toISOString(),
-      payload: req.body || {}
+      payload
     });
 
-    if (!companyName || typeof companyName !== "string") {
-      return res.status(400).json({
-        error: "companyName is required and must be a string."
+    const result = await searchDecisionMakerLeads(payload);
+
+    if (!result.ok) {
+      return res.status(result.status || 400).json({
+        error: result.error || "Unable to process search request"
       });
     }
 
-    const result = await leadPipeline({
-      companyName: companyName.trim(),
-      industry: industry || "",
-      companySize: companySize || "",
-      geography: geography || ""
-    });
-
     return res.json(result);
   } catch (error) {
-    console.error("Error in /lead:", error);
+    console.error("Error in decision-maker search:", error);
     return res.status(500).json({
-      error: "Failed to run lead pipeline",
+      error: "Failed to run decision-maker search",
       details: error.message
     });
   }
-});
+}
+
+app.post("/search", handleDecisionMakerSearch);
+
+app.post("/lead", handleDecisionMakerSearch);
 
 app.post("/web-search", async (req, res) => {
   try {
