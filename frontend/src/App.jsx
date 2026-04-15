@@ -230,32 +230,36 @@ function getPrimarySearch(searches) {
   return Array.isArray(searches) && searches.length ? searches[0] : null;
 }
 
-function buildResearchBrief(searches, summary) {
+function buildResearchBrief(searches, summary, results) {
   const primary = getPrimarySearch(searches) || {};
-  const primaryContext = Array.isArray(summary?.companyContexts) && summary.companyContexts.length
-    ? summary.companyContexts[0]
-    : null;
+  const primaryContext =
+    (Array.isArray(summary?.companyContexts) && summary.companyContexts.length
+      ? summary.companyContexts[0]
+      : null) ||
+    results.find((row) => row?.companyContext) ||
+    null;
+  const resolvedContext = primaryContext?.companyContext || primaryContext;
   const companyName = primaryContext?.name || primary.companyName || "Target Company";
-  const industry = primaryContext?.industry || primary.industry || "Unknown";
-  const geography = primaryContext?.geography || primary.location || "Unknown";
-  const employeeStrength = primaryContext?.employeeStrength || "Unavailable";
+  const industry = resolvedContext?.industry || primary.industry || "Unknown";
+  const geography = resolvedContext?.geography || primary.location || "Unknown";
+  const employeeStrength = resolvedContext?.employeeStrength || "Unavailable";
 
   return {
     accountContext: {
       companyName,
-      website: primaryContext?.website || primary.website || "Unavailable",
+      website: resolvedContext?.website || primaryContext?.companyWebsite || primary.website || "Unavailable",
       industry,
       companySize: employeeStrength,
       geography,
       employeeStrength,
       employeeStrengthSource:
-        primaryContext?.employeeStrengthSource || "unavailable",
-      source: primaryContext?.source || "live-website-fetch"
+        resolvedContext?.employeeStrengthSource || "unavailable",
+      source: resolvedContext?.source || "live-website-fetch"
     },
-    websiteTitle: primaryContext?.websiteTitle || `${companyName} | Company overview`,
+    websiteTitle: resolvedContext?.websiteTitle || `${companyName} | Company overview`,
     detectedThemes: (() => {
-      const fromDescription = primaryContext?.websiteDescription
-        ? primaryContext.websiteDescription
+      const fromDescription = resolvedContext?.websiteDescription
+        ? resolvedContext.websiteDescription
             .toLowerCase()
             .split(/[^a-z0-9]+/)
             .filter((word) => word.length > 4)
@@ -431,7 +435,7 @@ export default function App() {
   const visibleCount = filteredResults.length;
   const uniqueCompanies = countUnique(filteredResults, "companyName");
   const uniqueRoles = countUnique(filteredResults, "designation");
-  const researchBrief = buildResearchBrief(searches, summary);
+  const researchBrief = buildResearchBrief(searches, summary, results);
 
   return (
     <main className="app-shell">
