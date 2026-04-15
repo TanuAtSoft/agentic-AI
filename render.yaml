@@ -29,7 +29,8 @@ services:
       - key: SOFTPRODIGY_APIFY_TIMEOUT_SECONDS
         value: "120"
 
-  - type: static
+  - type: web
+    runtime: static
     name: agentic-ai-frontend
     rootDir: frontend
     buildCommand: npm ci && npm run build
