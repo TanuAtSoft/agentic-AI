@@ -13,7 +13,7 @@ services:
       - key: OPENAI_MODEL
         value: gpt-4.1-mini
       - key: OPENAI_WEB_SEARCH_MODEL
-        value: gpt-4.1-mini
+        value: gpt-5
       - key: APIFY_TOKEN
         sync: false
       - key: HUNTER_API_KEY
