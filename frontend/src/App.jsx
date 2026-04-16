@@ -909,6 +909,14 @@ export default function App() {
                     </p>
                   </div>
                 ) : null}
+                {summary.timings ? (
+                  <p className="micro-copy">
+                    Backend timing: {Math.round(summary.timings.totalMs / 100) / 10}s total | company resolve{" "}
+                    {Math.round(summary.timings.searchResolutionMs / 100) / 10}s | OpenAI{" "}
+                    {Math.round(summary.timings.openaiSearchMs / 100) / 10}s | Hunter{" "}
+                    {Math.round(summary.timings.hunterEnrichmentMs / 100) / 10}s
+                  </p>
+                ) : null}
                 <p className="micro-copy">
                   Generated at {new Date(summary.generatedAt).toLocaleString()} | Roles filtered using{" "}
                   {Array.isArray(summary.roleMapping?.included)

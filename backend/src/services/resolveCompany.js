@@ -47,7 +47,7 @@ function extractKeywords(text) {
 async function tryFetchWebsite(url) {
   try {
     const response = await axios.get(url, {
-      timeout: 8000,
+      timeout: Number(process.env.RESOLVE_COMPANY_TIMEOUT_MS || 4000),
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
@@ -69,10 +69,11 @@ async function resolveCompany(companyName, input) {
   let website = candidates[0];
   let websiteData = { success: false, title: "", description: "", textSnippet: "" };
 
-  for (const candidate of candidates) {
-    const data = await tryFetchWebsite(candidate);
+  const candidateResults = await Promise.all(candidates.map((candidate) => tryFetchWebsite(candidate)));
+  for (let index = 0; index < candidateResults.length; index += 1) {
+    const data = candidateResults[index];
     if (data.success) {
-      website = data.finalUrl || candidate;
+      website = data.finalUrl || candidates[index];
       websiteData = data;
       break;
     }

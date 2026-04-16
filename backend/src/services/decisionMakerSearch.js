@@ -862,6 +862,7 @@ async function enrichWithHunter(rows) {
 }
 
 async function searchDecisionMakerLeads(payload = {}) {
+  const startedAt = Date.now();
   const searches = normalizeSearches(payload);
   if (!searches.length) {
     return {
@@ -880,9 +881,18 @@ async function searchDecisionMakerLeads(payload = {}) {
   const allRows = [];
   const searchLogs = [];
   const companyContexts = [];
+  const stageTimings = {
+    searchStartedAt: new Date(startedAt).toISOString(),
+    searchResolutionMs: 0,
+    openaiSearchMs: 0,
+    hunterEnrichmentMs: 0,
+    totalMs: 0
+  };
 
   for (const [index, search] of searches.entries()) {
+    const searchStart = Date.now();
     const companyContext = await resolveCompanyContext(search);
+    stageTimings.searchResolutionMs += Date.now() - searchStart;
     companyContexts.push({
       searchId: search.id,
       label: search.label,
@@ -890,7 +900,9 @@ async function searchDecisionMakerLeads(payload = {}) {
     });
 
     if (hasOpenAIKey()) {
+      const openaiStart = Date.now();
       const response = await searchWithOpenAI(search, roleMapping, maxResultsPerSearch, companyContext);
+      stageTimings.openaiSearchMs += Date.now() - openaiStart;
       if (response.ok) {
         allRows.push(...response.rows);
         searchLogs.push({
@@ -917,7 +929,9 @@ async function searchDecisionMakerLeads(payload = {}) {
     });
   }
 
+  const hunterStart = Date.now();
   const hunterEnrichment = await enrichWithHunter(allRows);
+  stageTimings.hunterEnrichmentMs = Date.now() - hunterStart;
   const enrichedRows = hunterEnrichment.rows;
   const filteredRows = dedupeRows(
     enrichedRows.filter((row) =>
@@ -966,6 +980,7 @@ async function searchDecisionMakerLeads(payload = {}) {
         }))
     }
   };
+  stageTimings.totalMs = Date.now() - startedAt;
 
   return {
     ok: true,
@@ -978,6 +993,7 @@ async function searchDecisionMakerLeads(payload = {}) {
     totalResults: filteredRows.length,
     results: filteredRows,
     integrationSnapshot,
+    timings: stageTimings,
     appliedFilters: {
       keywords: normalizeKeywordList(payload.keywords || payload.keyword),
       industries: normalizeKeywordList(payload.industries || payload.industry),
