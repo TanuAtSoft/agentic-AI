@@ -250,6 +250,9 @@ async function resolveCompanyContext(search) {
 
   const apolloSignals = hasApolloApiKey() ? await fetchApolloCompanySignals({ company }) : null;
   const apollo = apolloSignals && apolloSignals.ok ? apolloSignals : null;
+  const resolvedName = apollo?.organizationName || company.name;
+  const resolvedIndustry = apollo?.industry || company.industry || "Unknown";
+  const resolvedGeography = apollo?.location || search.location || company.geography || "Unknown";
 
   const employeeStrength =
     apollo?.estimatedNumEmployees ??
@@ -261,13 +264,35 @@ async function resolveCompanyContext(search) {
 
   return {
     ...company,
-    source: company.source || "live-website-fetch",
-    websiteTitle: company.websiteSummary?.title || "",
-    websiteDescription: company.websiteSummary?.description || "",
-    websiteSnippet: company.websiteSummary?.textSnippet || "",
+    name: resolvedName,
+    industry: resolvedIndustry,
+    companySize: employeeStrength,
+    geography: resolvedGeography,
+    website: apollo?.website || company.website,
+    source: apollo?.source || company.source || "live-website-fetch",
+    websiteTitle: company.websiteSummary?.title || `${resolvedName} | Company overview`,
+    websiteDescription:
+      company.websiteSummary?.description ||
+      (apollo
+        ? `${resolvedName} is a ${resolvedIndustry}${resolvedGeography ? ` company based in ${resolvedGeography}` : ""}.`
+        : ""),
+    websiteSnippet:
+      company.websiteSummary?.textSnippet ||
+      (apollo
+        ? `${resolvedName} | ${resolvedIndustry || "Company"} | ${resolvedGeography || "Unknown"}`
+        : ""),
     employeeStrength,
     employeeStrengthSource,
     apolloSignals: apollo
+      ? {
+          ...apollo,
+          companyName: resolvedName,
+          industry: resolvedIndustry,
+          location: resolvedGeography,
+          website: apollo.website || company.website,
+          companySize: employeeStrength
+        }
+      : null
   };
 }
 
@@ -373,6 +398,12 @@ function buildSearchPrompt(search, roleMapping, limit, companyContext = null) {
     companyContext?.website
       ? `Resolved company website: ${companyContext.website}.`
       : "Resolved company website: unavailable.",
+    companyContext?.name ? `Resolved company name: ${companyContext.name}.` : "Resolved company name: unavailable.",
+    companyContext?.industry ? `Resolved industry: ${companyContext.industry}.` : "Resolved industry: unavailable.",
+    companyContext?.geography ? `Resolved geography: ${companyContext.geography}.` : "Resolved geography: unavailable.",
+    companyContext?.companySize && companyContext.companySize !== "Unavailable"
+      ? `Resolved company size: ${companyContext.companySize}.`
+      : "Resolved company size: unavailable.",
     companyContext?.websiteTitle
       ? `Website title: ${companyContext.websiteTitle}.`
       : "Website title: unavailable.",
@@ -572,6 +603,9 @@ function normalizeResultRow(row, search, index, sourceMode, companyContext = nul
       ? {
           name: companyContext.name || "",
           website: companyContext.website || "",
+          industry: companyContext.industry || "",
+          geography: companyContext.geography || "",
+          companySize: companyContext.companySize || "",
           websiteTitle: companyContext.websiteTitle || "",
           websiteDescription: companyContext.websiteDescription || "",
           websiteSnippet: companyContext.websiteSnippet || "",

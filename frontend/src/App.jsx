@@ -279,24 +279,54 @@ function buildResearchBrief(searches, summary, results) {
     results.find((row) => row?.companyContext) ||
     null;
   const resolvedContext = primaryContext?.companyContext || primaryContext;
-  const companyName = primaryContext?.name || primary.companyName || "Target Company";
-  const industry = resolvedContext?.industry || primary.industry || "Unknown";
-  const geography = resolvedContext?.geography || primary.location || "Unknown";
+  const companyName =
+    resolvedContext?.name ||
+    resolvedContext?.apolloSignals?.companyName ||
+    primaryContext?.name ||
+    primary.companyName ||
+    "Target Company";
+  const industry =
+    resolvedContext?.industry ||
+    resolvedContext?.apolloSignals?.industry ||
+    primary.industry ||
+    "Unknown";
+  const geography =
+    resolvedContext?.geography ||
+    resolvedContext?.apolloSignals?.location ||
+    primary.location ||
+    "Unknown";
   const employeeStrength = resolvedContext?.employeeStrength || "Unavailable";
+  const companySize = resolvedContext?.companySize || employeeStrength;
+  const websiteTitle = resolvedContext?.websiteTitle || `${companyName} | Company overview`;
+  const apolloSignals = resolvedContext?.apolloSignals || {};
+  const themeSource = [
+    resolvedContext?.websiteDescription,
+    resolvedContext?.websiteTitle,
+    apolloSignals.industry,
+    apolloSignals.companyName,
+    apolloSignals.location,
+    companyName,
+    industry,
+    geography
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return {
     accountContext: {
       companyName,
       website: resolvedContext?.website || primaryContext?.companyWebsite || primary.website || "Unavailable",
       industry,
-      companySize: employeeStrength,
+      companySize,
       geography,
       employeeStrength,
+      foundedYear: apolloSignals.foundedYear || "Unavailable",
+      linkedinUrl: apolloSignals.linkedinUrl || "Unavailable",
       employeeStrengthSource:
         resolvedContext?.employeeStrengthSource || "unavailable",
       source: resolvedContext?.source || "live-website-fetch"
     },
-    websiteTitle: resolvedContext?.websiteTitle || `${companyName} | Company overview`,
+    websiteTitle,
     detectedThemes: (() => {
       const fromDescription = resolvedContext?.websiteDescription
         ? resolvedContext.websiteDescription
@@ -306,7 +336,16 @@ function buildResearchBrief(searches, summary, results) {
             .slice(0, 8)
         : [];
 
-      return fromDescription.length ? fromDescription : [industry.toLowerCase()];
+      if (fromDescription.length) {
+        return fromDescription;
+      }
+
+      const fallbackThemes = themeSource
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((word) => word.length > 3 && !["unknown", "unavailable", "company", "overview"].includes(word));
+
+      return Array.from(new Set(fallbackThemes)).slice(0, 8);
     })(),
     outreachName: `${companyName} Leader 1`
   };
@@ -990,6 +1029,22 @@ export default function App() {
                   <div>
                     <dt>Data source</dt>
                     <dd>{researchBrief.accountContext.source}</dd>
+                  </div>
+                  <div>
+                    <dt>Founded year</dt>
+                    <dd>{researchBrief.accountContext.foundedYear}</dd>
+                  </div>
+                  <div>
+                    <dt>LinkedIn</dt>
+                    <dd>
+                      {researchBrief.accountContext.linkedinUrl !== "Unavailable" ? (
+                        <a href={researchBrief.accountContext.linkedinUrl} target="_blank" rel="noreferrer">
+                          Open company profile
+                        </a>
+                      ) : (
+                        "Unavailable"
+                      )}
+                    </dd>
                   </div>
                   <div>
                     <dt>Website title</dt>

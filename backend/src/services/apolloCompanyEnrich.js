@@ -57,6 +57,35 @@ function extractApolloEmployeeStrength(org) {
   return org?.employee_range || org?.employeeRange || null;
 }
 
+function extractApolloLocation(org) {
+  return (
+    org?.location ||
+    org?.location_name ||
+    org?.city ||
+    org?.state ||
+    org?.country ||
+    org?.hq_location ||
+    org?.headquarters ||
+    null
+  );
+}
+
+function extractApolloWebsite(org) {
+  return org?.website_url || org?.website || org?.domain || null;
+}
+
+function extractApolloIndustry(org) {
+  return org?.industry || org?.industry_name || org?.vertical || null;
+}
+
+function extractApolloFoundedYear(org) {
+  return org?.founded_year || org?.foundedYear || org?.year_founded || null;
+}
+
+function extractApolloLinkedInUrl(org) {
+  return org?.linkedin_url || org?.linkedinUrl || null;
+}
+
 async function fetchApolloCompanySignals({ company }) {
   assertServerSide();
 
@@ -82,13 +111,15 @@ async function fetchApolloCompanySignals({ company }) {
   }
 
   try {
-    const response = await axios.get("https://api.apollo.io/api/v1/organizations/enrich", {
-      params: { domain },
+    const response = await axios.get("https://api.apollo.io/v1/organizations/enrich", {
+      params: { domain, api_key: apiKey },
       timeout: Number(process.env.APOLLO_API_TIMEOUT_MS || 12000),
       headers: {
         Authorization: `Bearer ${apiKey}`,
+        "X-Api-Key": apiKey,
+        "Cache-Control": "no-cache",
         accept: "application/json",
-        "Cache-Control": "no-cache"
+        "Content-Type": "application/json"
       }
     });
 
@@ -101,8 +132,16 @@ async function fetchApolloCompanySignals({ company }) {
       provider: "apollo",
       domain,
       organizationName: org?.name || org?.organization_name || company.name || "",
+      industry: extractApolloIndustry(org) || "",
+      website: extractApolloWebsite(org) || company.website || "",
+      linkedinUrl: extractApolloLinkedInUrl(org) || "",
+      foundedYear: extractApolloFoundedYear(org) || null,
+      location: extractApolloLocation(org) || "",
       estimatedNumEmployees: typeof employeeStrength === "number" ? employeeStrength : null,
-      employeeRange: org?.employee_range || org?.employeeRange || (typeof employeeStrength === "string" ? employeeStrength : null),
+      employeeRange:
+        org?.employee_range ||
+        org?.employeeRange ||
+        (typeof employeeStrength === "string" ? employeeStrength : null),
       rawEmployeeStrength: employeeStrength
     };
   } catch (error) {
