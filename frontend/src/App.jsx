@@ -96,6 +96,18 @@ const SOURCES_USED = [
   "Industry-specific communities (planned)"
 ];
 
+function formatConnectionState(value) {
+  if (value === null || value === undefined) {
+    return "Loading...";
+  }
+
+  return value ? "Connected" : "Not configured";
+}
+
+function formatCount(value) {
+  return Number.isFinite(Number(value)) ? Number(value) : 0;
+}
+
 function createSearchRow(index = 0) {
   return {
     id: `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
@@ -287,6 +299,66 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [roleConfigLoading, setRoleConfigLoading] = useState(false);
+  const [integrationStatus, setIntegrationStatus] = useState({
+    loading: false,
+    error: "",
+    connectors: null,
+    openaiDiagnostics: null,
+    openaiProbe: null
+  });
+
+  const loadIntegrationStatus = async () => {
+    setIntegrationStatus((current) => ({ ...current, loading: true, error: "" }));
+
+    try {
+      const [connectorsResponse, openaiResponse] = await Promise.all([
+        fetch(`${API_BASE}/debug/connectors`),
+        fetch(`${API_BASE}/debug/openai`)
+      ]);
+
+      const connectors = connectorsResponse.ok ? await connectorsResponse.json() : null;
+      const openaiDiagnostics = openaiResponse.ok ? await openaiResponse.json() : null;
+
+      setIntegrationStatus((current) => ({
+        ...current,
+        connectors,
+        openaiDiagnostics: openaiDiagnostics?.diagnostics || null
+      }));
+    } catch (integrationError) {
+      setIntegrationStatus((current) => ({
+        ...current,
+        error: integrationError.message || "Unable to load integration status."
+      }));
+    } finally {
+      setIntegrationStatus((current) => ({ ...current, loading: false }));
+    }
+  };
+
+  const runOpenAIProbe = async () => {
+    setIntegrationStatus((current) => ({ ...current, loading: true, error: "" }));
+
+    try {
+      const response = await fetch(`${API_BASE}/debug/test-openai`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error?.message || data.error || "OpenAI probe failed");
+      }
+
+      setIntegrationStatus((current) => ({
+        ...current,
+        openaiProbe: data,
+        openaiDiagnostics: data.diagnostics || current.openaiDiagnostics || null
+      }));
+    } catch (probeError) {
+      setIntegrationStatus((current) => ({
+        ...current,
+        error: probeError.message || "Unable to run OpenAI probe."
+      }));
+    } finally {
+      setIntegrationStatus((current) => ({ ...current, loading: false }));
+    }
+  };
 
   useEffect(() => {
     let active = true;
@@ -323,6 +395,7 @@ export default function App() {
     }
 
     loadRoleConfig();
+    loadIntegrationStatus();
 
     return () => {
       active = false;
@@ -436,6 +509,8 @@ export default function App() {
   const uniqueCompanies = countUnique(filteredResults, "companyName");
   const uniqueRoles = countUnique(filteredResults, "designation");
   const researchBrief = buildResearchBrief(searches, summary, results);
+  const integrationSnapshot = summary?.integrationSnapshot || null;
+  const connectorSnapshot = integrationStatus.connectors || null;
 
   return (
     <main className="app-shell">
@@ -658,6 +733,97 @@ export default function App() {
         </aside>
 
         <section className="results-stack">
+          <section className="panel integration-panel">
+            <div className="panel-heading compact">
+              <p className="eyebrow">Integration checks</p>
+              <h3>OpenAI, Hunter, and Apollo status</h3>
+            </div>
+
+            <div className="builder-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={loadIntegrationStatus}
+                disabled={integrationStatus.loading}
+              >
+                Refresh status
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={runOpenAIProbe}
+                disabled={integrationStatus.loading}
+              >
+                Run OpenAI probe
+              </button>
+            </div>
+
+            {integrationStatus.error ? (
+              <p className="error">Integration check error: {integrationStatus.error}</p>
+            ) : null}
+
+            <div className="integration-grid">
+              <article className="integration-card">
+                <strong>OpenAI</strong>
+                <p>Configured: {formatConnectionState(connectorSnapshot?.openaiConfigured)}</p>
+                <p>Backend status: {integrationStatus.openaiDiagnostics?.lastStatus || "unknown"}</p>
+                <p>Model: {integrationStatus.openaiDiagnostics?.lastModel || "unknown"}</p>
+                <p className="micro-copy">
+                  Attempts: {formatCount(integrationStatus.openaiDiagnostics?.totalAttempts)} | Successes:{" "}
+                  {formatCount(integrationStatus.openaiDiagnostics?.successCount)} | Failures:{" "}
+                  {formatCount(integrationStatus.openaiDiagnostics?.failureCount)}
+                </p>
+                {integrationStatus.openaiProbe ? (
+                  <>
+                    <p>Probe result: {integrationStatus.openaiProbe.ok ? "OK" : "Failed"}</p>
+                    <p className="micro-copy">
+                      Output: {integrationStatus.openaiProbe.outputText || "No output returned"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="micro-copy">Run the probe to confirm the live OpenAI path.</p>
+                )}
+              </article>
+
+              <article className="integration-card">
+                <strong>Hunter</strong>
+                <p>Configured: {formatConnectionState(connectorSnapshot?.hunterConfigured)}</p>
+                <p>Integration mode: {connectorSnapshot?.hunterConfigured ? "hunter-domain-search" : "unconfigured"}</p>
+                {integrationSnapshot?.hunter ? (
+                  <>
+                    <p>Search targets: {formatCount(integrationSnapshot.hunter.targetCount)}</p>
+                    <p>Successful lookups: {formatCount(integrationSnapshot.hunter.successfulLookups)}</p>
+                    <p>Decision-maker contacts: {formatCount(integrationSnapshot.hunter.decisionMakerContactsFound)}</p>
+                    <p>Strong email matches: {formatCount(integrationSnapshot.hunter.strongMatches)}</p>
+                    <p>Hunter-tagged rows: {formatCount(integrationSnapshot.hunter.rowsWithHunterSource)}</p>
+                  </>
+                ) : (
+                  <p className="micro-copy">Run a search to see Hunter enrichment evidence.</p>
+                )}
+              </article>
+
+              <article className="integration-card">
+                <strong>Apollo</strong>
+                <p>Configured: {formatConnectionState(connectorSnapshot?.apolloConfigured)}</p>
+                <p>Integration mode: {connectorSnapshot?.apolloIntegrationMode || "unconfigured"}</p>
+                {integrationSnapshot?.apollo ? (
+                  <>
+                    <p>Company contexts enriched: {formatCount(integrationSnapshot.apollo.companyContextsWithApollo)}</p>
+                    <p className="micro-copy">
+                      Used in search: {integrationSnapshot.apollo.used ? "Yes" : "No"}
+                    </p>
+                    <p className="micro-copy">
+                      Latest employee strength source:{" "}
+                      {integrationSnapshot.apollo.employeeStrengthSources?.[0]?.source || "n/a"}
+                    </p>
+                  </>
+                ) : (
+                  <p className="micro-copy">Run a search to see Apollo company enrichment evidence.</p>
+                )}
+              </article>
+            </div>
+          </section>
+
           {loading ? (
             <div className="loading-overlay" role="status" aria-live="polite" aria-busy="true">
               <div className="loading-card">
@@ -698,6 +864,16 @@ export default function App() {
                   <span>Mode</span>
                   <p>{summary.sourceMode === "openai-web-search" ? "Live web search" : "Local fallback"}</p>
                 </div>
+                {integrationSnapshot ? (
+                  <div className="results-banner secondary-banner">
+                    <span>Integration snapshot</span>
+                    <p>
+                      OpenAI: {integrationSnapshot.openai.used ? "used" : "not used"} | Hunter:{" "}
+                      {integrationSnapshot.hunter.strongMatches || integrationSnapshot.hunter.successfulLookups ? "used" : "not used"} | Apollo:{" "}
+                      {integrationSnapshot.apollo.used ? "used" : "not used"}
+                    </p>
+                  </div>
+                ) : null}
                 <p className="micro-copy">
                   Generated at {new Date(summary.generatedAt).toLocaleString()} | Roles filtered using{" "}
                   {Array.isArray(summary.roleMapping?.included)

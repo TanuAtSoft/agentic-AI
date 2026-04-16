@@ -1,5 +1,5 @@
 const { callWithOpenAIRequest, hasOpenAIKey, extractJsonObject } = require("./openaiClient");
-const { fetchHunterDomainSearch } = require("./hunterDomainSearch");
+const { fetchHunterDomainSearch, hasHunterApiKey } = require("./hunterDomainSearch");
 const { resolveCompany } = require("./resolveCompany");
 const { fetchApolloCompanySignals, hasApolloApiKey } = require("./apolloCompanyEnrich");
 
@@ -715,8 +715,19 @@ function normalizeWebsite(value) {
 }
 
 async function enrichWithHunter(rows) {
+  const metadata = {
+    configured: hasHunterApiKey(),
+    attempted: false,
+    targetCount: 0,
+    successfulLookups: 0,
+    contactsFound: 0,
+    decisionMakerContactsFound: 0,
+    strongMatches: 0,
+    rowsWithHunterSource: 0
+  };
+
   if (!rows.length) {
-    return rows;
+    return { rows, metadata };
   }
 
   const uniqueTargets = new Map();
@@ -737,8 +748,11 @@ async function enrichWithHunter(rows) {
   }
 
   if (!uniqueTargets.size) {
-    return rows;
+    return { rows, metadata };
   }
+
+  metadata.attempted = true;
+  metadata.targetCount = uniqueTargets.size;
 
   const hunterResults = new Map();
 
@@ -750,18 +764,21 @@ async function enrichWithHunter(rows) {
       });
 
       if (search.ok) {
+        metadata.successfulLookups += 1;
+        metadata.contactsFound += Number(search.totalContacts || 0);
+        metadata.decisionMakerContactsFound += Number(search.totalDecisionMakers || 0);
         hunterResults.set(target.website.toLowerCase(), search);
       }
     })
   );
 
   if (!hunterResults.size) {
-    return rows;
+    return { rows, metadata };
   }
 
   const usedHunterEmailsByCompany = new Map();
 
-  return rows.map((row) => {
+  const enrichedRows = rows.map((row) => {
     const website = normalizeWebsite(row.companyWebsite);
     const hunterSearch = hunterResults.get(website.toLowerCase());
     if (!hunterSearch?.decisionMakerContacts?.length) {
@@ -803,11 +820,23 @@ async function enrichWithHunter(rows) {
     usedHunterEmailsByCompany.set(website.toLowerCase(), usedEmails);
 
     if (!hasStrongHunterMatch) {
-      return {
+      const nextRow = {
         ...row,
         emailId: resolvedEmail,
+        hunterSource: hunterSearch ? "hunter-domain-search" : row.hunterSource || "",
         sourceNote: row.sourceNote || "Hunter enrichment applied"
       };
+
+      if (hunterSearch) {
+        metadata.rowsWithHunterSource += 1;
+      }
+
+      return nextRow;
+    }
+
+    metadata.rowsWithHunterSource += 1;
+    if (hasStrongHunterMatch) {
+      metadata.strongMatches += 1;
     }
 
     return {
@@ -816,9 +845,20 @@ async function enrichWithHunter(rows) {
       phoneNumber: row.phoneNumber || bestMatch.phoneNumber || "",
       linkedinProfile: row.linkedinProfile || bestMatch.linkedinUrl || "",
       department: row.department || bestMatch.department || "",
+      hunterSource: "hunter-domain-search",
+      hunterMatch: {
+        name: bestMatch.name,
+        title: bestMatch.title,
+        seniority: bestMatch.seniority,
+        department: bestMatch.department,
+        confidence: bestMatch.confidence,
+        verificationStatus: bestMatch.verificationStatus
+      },
       sourceNote: row.sourceNote || "Hunter enrichment applied"
     };
   });
+
+  return { rows: enrichedRows, metadata };
 }
 
 async function searchDecisionMakerLeads(payload = {}) {
@@ -877,7 +917,8 @@ async function searchDecisionMakerLeads(payload = {}) {
     });
   }
 
-  const enrichedRows = await enrichWithHunter(allRows);
+  const hunterEnrichment = await enrichWithHunter(allRows);
+  const enrichedRows = hunterEnrichment.rows;
   const filteredRows = dedupeRows(
     enrichedRows.filter((row) =>
       hasDecisionMakerRole(row.designation, roleMapping) &&
@@ -887,6 +928,44 @@ async function searchDecisionMakerLeads(payload = {}) {
   const sourceMode = searchLogs.some((log) => log.mode === "openai-web-search")
     ? "openai-web-search"
     : "fallback-generated";
+  const apolloConfigured = hasApolloApiKey();
+  const apolloUsedCount = companyContexts.filter((context) => Boolean(context.apolloSignals)).length;
+  const openaiUsedCount = searchLogs.filter((log) => log.mode === "openai-web-search").length;
+
+  const integrationSnapshot = {
+    openai: {
+      configured: hasOpenAIKey(),
+      used: openaiUsedCount > 0,
+      usedSearches: openaiUsedCount,
+      fallbackSearches: searchLogs.filter((log) => log.mode === "fallback-generated").length
+    },
+    hunter: {
+      configured: hunterEnrichment.metadata.configured,
+      attempted: hunterEnrichment.metadata.attempted,
+      targetCount: hunterEnrichment.metadata.targetCount,
+      successfulLookups: hunterEnrichment.metadata.successfulLookups,
+      contactsFound: hunterEnrichment.metadata.contactsFound,
+      decisionMakerContactsFound: hunterEnrichment.metadata.decisionMakerContactsFound,
+      strongMatches: hunterEnrichment.metadata.strongMatches,
+      rowsWithHunterSource: hunterEnrichment.metadata.rowsWithHunterSource
+    },
+    apollo: {
+      configured: apolloConfigured,
+      used: apolloUsedCount > 0,
+      companyContextsWithApollo: apolloUsedCount,
+      employeeStrengthSources: companyContexts
+        .filter((context) => context.apolloSignals)
+        .map((context) => ({
+          searchId: context.searchId,
+          label: context.label,
+          domain: context.apolloSignals.domain || context.website || "",
+          organizationName: context.apolloSignals.organizationName || context.name || "",
+          employeeRange: context.apolloSignals.employeeRange || null,
+          estimatedNumEmployees: context.apolloSignals.estimatedNumEmployees ?? null,
+          source: context.apolloSignals.source || "apollo-organization-enrich"
+        }))
+    }
+  };
 
   return {
     ok: true,
@@ -898,6 +977,7 @@ async function searchDecisionMakerLeads(payload = {}) {
     searchCount: searches.length,
     totalResults: filteredRows.length,
     results: filteredRows,
+    integrationSnapshot,
     appliedFilters: {
       keywords: normalizeKeywordList(payload.keywords || payload.keyword),
       industries: normalizeKeywordList(payload.industries || payload.industry),

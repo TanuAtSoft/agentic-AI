@@ -271,6 +271,13 @@ button:disabled {
   padding: 22px;
 }
 
+.integration-panel {
+  border: 1px solid rgba(244, 174, 52, 0.18);
+  background:
+    linear-gradient(180deg, rgba(244, 174, 52, 0.08), rgba(11, 22, 40, 0.88)),
+    var(--panel-bg);
+}
+
 .builder-panel {
   position: sticky;
   top: 18px;
@@ -623,6 +630,13 @@ button,
     var(--panel-bg);
 }
 
+.secondary-banner {
+  margin-top: 10px;
+  background:
+    linear-gradient(135deg, rgba(103, 215, 255, 0.14), rgba(255, 255, 255, 0.04)),
+    var(--panel-bg);
+}
+
 .results-banner p {
   margin: 8px 0 0;
   color: var(--text-main);
@@ -702,6 +716,30 @@ button,
   gap: 12px;
 }
 
+.integration-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.integration-card {
+  padding: 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.integration-card strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.02rem;
+}
+
+.integration-card p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+}
+
 .distribution-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -773,7 +811,8 @@ button,
   .brief-grid,
   .stats-grid.compact,
   .filter-grid,
-  .distribution-grid {
+  .distribution-grid,
+  .integration-grid {
     grid-template-columns: 1fr;
   }
 
