@@ -19,7 +19,7 @@ const DEFAULT_INCLUDED_ROLES = [
   "Vice President",
   "Head of",
   "Director",
-  "General Manager"
+  "General Manager",
 ];
 
 const DEFAULT_EXCLUDED_ROLES = [
@@ -31,14 +31,14 @@ const DEFAULT_EXCLUDED_ROLES = [
   "Analyst",
   "Specialist",
   "Junior",
-  "Entry Level"
+  "Entry Level",
 ];
 
 const DEFAULT_FILTERS = {
   query: "",
   company: "",
   title: "",
-  location: ""
+  location: "",
 };
 
 const WORKFLOW_STEPS = [
@@ -47,29 +47,29 @@ const WORKFLOW_STEPS = [
     index: "01",
     title: "Decide where to search",
     description:
-      "Choose company site, web, backend LinkedIn, Apollo company enrichment, Indeed, Crunchbase, and regional sources."
+      "Choose company site, web, backend LinkedIn, Apollo company enrichment, Indeed, Crunchbase, and regional sources.",
   },
   {
     id: "buyers",
     index: "02",
     title: "Identify decision-makers",
     description:
-      "Find the most relevant leaders and explain why each one matters."
+      "Find the most relevant leaders and explain why each one matters.",
   },
   {
     id: "signals",
     index: "03",
     title: "Gather and analyze signals",
     description:
-      "Pull hiring, growth, backend LinkedIn, Indeed, Crunchbase, regional, and messaging clues into a single view."
+      "Pull hiring, growth, backend LinkedIn, Indeed, Crunchbase, regional, and messaging clues into a single view.",
   },
   {
     id: "outreach",
     index: "04",
     title: "Generate outreach",
     description:
-      "Craft personalized email, LinkedIn, and call-opening copy from the synthesized context."
-  }
+      "Craft personalized email, LinkedIn, and call-opening copy from the synthesized context.",
+  },
 ];
 
 const SIGNAL_CHECKLIST = [
@@ -77,7 +77,7 @@ const SIGNAL_CHECKLIST = [
   "Growth language and expansion clues",
   "Technology or process modernization indicators",
   "Executive or team messaging themes",
-  "Regional and industry-specific relevance"
+  "Regional and industry-specific relevance",
 ];
 
 const SOURCES_USED = [
@@ -93,7 +93,7 @@ const SOURCES_USED = [
   "Server-side Indeed hiring API (planned)",
   "Server-side Crunchbase funding API (planned)",
   "Regional ecosystem signals (planned)",
-  "Industry-specific communities (planned)"
+  "Industry-specific communities (planned)",
 ];
 
 function formatConnectionState(value) {
@@ -148,7 +148,7 @@ function createSearchRow(index = 0) {
     employeeCountMode: "any",
     employeeCountMin: "",
     employeeCountMax: "",
-    notes: ""
+    notes: "",
   };
 }
 
@@ -175,7 +175,7 @@ function downloadCsv(rows) {
     "Company Name",
     "LinkedIn Profile",
     "Phone Number",
-    "Email ID"
+    "Email ID",
   ];
 
   const lines = [
@@ -188,14 +188,16 @@ function downloadCsv(rows) {
         row.companyName,
         row.linkedinProfile,
         row.phoneNumber,
-        row.emailId
+        row.emailId,
       ]
         .map(escapeCsv)
-        .join(",")
-    )
+        .join(","),
+    ),
   ];
 
-  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob([lines.join("\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -217,7 +219,7 @@ function matchesFilter(row, filters) {
     row.emailId,
     row.location,
     row.employeeCount,
-    row.searchLabel
+    row.searchLabel,
   ]
     .join(" ")
     .toLowerCase();
@@ -247,7 +249,9 @@ function matchesFilter(row, filters) {
 }
 
 function countUnique(rows, key) {
-  return new Set(rows.map((row) => `${row[key] || ""}`.trim().toLowerCase()).filter(Boolean)).size;
+  return new Set(
+    rows.map((row) => `${row[key] || ""}`.trim().toLowerCase()).filter(Boolean),
+  ).size;
 }
 
 function summarizeEmployeeCountRange(mode, min, max) {
@@ -297,7 +301,8 @@ function buildResearchBrief(searches, summary, results) {
     "Unknown";
   const employeeStrength = resolvedContext?.employeeStrength || "Unavailable";
   const companySize = resolvedContext?.companySize || employeeStrength;
-  const websiteTitle = resolvedContext?.websiteTitle || `${companyName} | Company overview`;
+  const websiteTitle =
+    resolvedContext?.websiteTitle || `${companyName} | Company overview`;
   const apolloSignals = resolvedContext?.apolloSignals || {};
   const themeSource = [
     resolvedContext?.websiteDescription,
@@ -307,7 +312,7 @@ function buildResearchBrief(searches, summary, results) {
     apolloSignals.location,
     companyName,
     industry,
-    geography
+    geography,
   ]
     .filter(Boolean)
     .join(" ");
@@ -315,7 +320,11 @@ function buildResearchBrief(searches, summary, results) {
   return {
     accountContext: {
       companyName,
-      website: resolvedContext?.website || primaryContext?.companyWebsite || primary.website || "Unavailable",
+      website:
+        resolvedContext?.website ||
+        primaryContext?.companyWebsite ||
+        primary.website ||
+        "Unavailable",
       industry,
       companySize,
       geography,
@@ -324,7 +333,7 @@ function buildResearchBrief(searches, summary, results) {
       linkedinUrl: apolloSignals.linkedinUrl || "Unavailable",
       employeeStrengthSource:
         resolvedContext?.employeeStrengthSource || "unavailable",
-      source: resolvedContext?.source || "live-website-fetch"
+      source: resolvedContext?.source || "live-website-fetch",
     },
     websiteTitle,
     detectedThemes: (() => {
@@ -343,11 +352,15 @@ function buildResearchBrief(searches, summary, results) {
       const fallbackThemes = themeSource
         .toLowerCase()
         .split(/[^a-z0-9]+/)
-        .filter((word) => word.length > 3 && !["unknown", "unavailable", "company", "overview"].includes(word));
+        .filter(
+          (word) =>
+            word.length > 3 &&
+            !["unknown", "unavailable", "company", "overview"].includes(word),
+        );
 
       return Array.from(new Set(fallbackThemes)).slice(0, 8);
     })(),
-    outreachName: `${companyName} Leader 1`
+    outreachName: `${companyName} Leader 1`,
   };
 }
 
@@ -355,10 +368,10 @@ export default function App() {
   const [searches, setSearches] = useState([createSearchRow(0)]);
   const [roleText, setRoleText] = useState({
     included: DEFAULT_INCLUDED_ROLES.join(", "),
-    excluded: DEFAULT_EXCLUDED_ROLES.join(", ")
+    excluded: DEFAULT_EXCLUDED_ROLES.join(", "),
   });
   const [filters, setFilters] = useState({
-    ...DEFAULT_FILTERS
+    ...DEFAULT_FILTERS,
   });
   const [results, setResults] = useState([]);
   const [searchLogs, setSearchLogs] = useState([]);
@@ -371,30 +384,38 @@ export default function App() {
     error: "",
     connectors: null,
     openaiDiagnostics: null,
-    openaiProbe: null
+    openaiProbe: null,
   });
 
   const loadIntegrationStatus = async () => {
-    setIntegrationStatus((current) => ({ ...current, loading: true, error: "" }));
+    setIntegrationStatus((current) => ({
+      ...current,
+      loading: true,
+      error: "",
+    }));
 
     try {
       const [connectorsResponse, openaiResponse] = await Promise.all([
         fetch(`${API_BASE}/debug/connectors`),
-        fetch(`${API_BASE}/debug/openai`)
+        fetch(`${API_BASE}/debug/openai`),
       ]);
 
-      const connectors = connectorsResponse.ok ? await connectorsResponse.json() : null;
-      const openaiDiagnostics = openaiResponse.ok ? await openaiResponse.json() : null;
+      const connectors = connectorsResponse.ok
+        ? await connectorsResponse.json()
+        : null;
+      const openaiDiagnostics = openaiResponse.ok
+        ? await openaiResponse.json()
+        : null;
 
       setIntegrationStatus((current) => ({
         ...current,
         connectors,
-        openaiDiagnostics: openaiDiagnostics?.diagnostics || null
+        openaiDiagnostics: openaiDiagnostics?.diagnostics || null,
       }));
     } catch (integrationError) {
       setIntegrationStatus((current) => ({
         ...current,
-        error: integrationError.message || "Unable to load integration status."
+        error: integrationError.message || "Unable to load integration status.",
       }));
     } finally {
       setIntegrationStatus((current) => ({ ...current, loading: false }));
@@ -402,25 +423,32 @@ export default function App() {
   };
 
   const runOpenAIProbe = async () => {
-    setIntegrationStatus((current) => ({ ...current, loading: true, error: "" }));
+    setIntegrationStatus((current) => ({
+      ...current,
+      loading: true,
+      error: "",
+    }));
 
     try {
       const response = await fetch(`${API_BASE}/debug/test-openai`);
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error?.message || data.error || "OpenAI probe failed");
+        throw new Error(
+          data.error?.message || data.error || "OpenAI probe failed",
+        );
       }
 
       setIntegrationStatus((current) => ({
         ...current,
         openaiProbe: data,
-        openaiDiagnostics: data.diagnostics || current.openaiDiagnostics || null
+        openaiDiagnostics:
+          data.diagnostics || current.openaiDiagnostics || null,
       }));
     } catch (probeError) {
       setIntegrationStatus((current) => ({
         ...current,
-        error: probeError.message || "Unable to run OpenAI probe."
+        error: probeError.message || "Unable to run OpenAI probe.",
       }));
     } finally {
       setIntegrationStatus((current) => ({ ...current, loading: false }));
@@ -445,12 +473,14 @@ export default function App() {
         }
 
         setRoleText({
-          included: Array.isArray(data.included) && data.included.length
-            ? data.included.join(", ")
-            : DEFAULT_INCLUDED_ROLES.join(", "),
-          excluded: Array.isArray(data.excluded) && data.excluded.length
-            ? data.excluded.join(", ")
-            : DEFAULT_EXCLUDED_ROLES.join(", ")
+          included:
+            Array.isArray(data.included) && data.included.length
+              ? data.included.join(", ")
+              : DEFAULT_INCLUDED_ROLES.join(", "),
+          excluded:
+            Array.isArray(data.excluded) && data.excluded.length
+              ? data.excluded.join(", ")
+              : DEFAULT_EXCLUDED_ROLES.join(", "),
         });
       } catch (_error) {
         // Keep the local defaults if the config endpoint is unavailable.
@@ -471,7 +501,7 @@ export default function App() {
 
   const updateSearchRow = (id, field, value) => {
     setSearches((current) =>
-      current.map((row) => (row.id === id ? { ...row, [field]: value } : row))
+      current.map((row) => (row.id === id ? { ...row, [field]: value } : row)),
     );
   };
 
@@ -480,7 +510,9 @@ export default function App() {
   };
 
   const removeSearchRow = (id) => {
-    setSearches((current) => (current.length > 1 ? current.filter((row) => row.id !== id) : current));
+    setSearches((current) =>
+      current.length > 1 ? current.filter((row) => row.id !== id) : current,
+    );
   };
 
   const loadSample = () => {
@@ -494,7 +526,7 @@ export default function App() {
         employeeCountMode: "between",
         employeeCountMin: "100",
         employeeCountMax: "5000",
-        notes: "Prioritize CTO, VP Engineering, and Head of Product profiles."
+        notes: "Prioritize CTO, VP Engineering, and Head of Product profiles.",
       },
       {
         ...createSearchRow(1),
@@ -505,11 +537,11 @@ export default function App() {
         employeeCountMode: "gt",
         employeeCountMin: "250",
         employeeCountMax: "",
-        notes: "Focus on founders, directors, and general managers."
-      }
+        notes: "Focus on founders, directors, and general managers.",
+      },
     ]);
     setFilters({
-      ...DEFAULT_FILTERS
+      ...DEFAULT_FILTERS,
     });
     setError("");
   };
@@ -538,21 +570,21 @@ export default function App() {
               : {
                   mode: row.employeeCountMode,
                   min: row.employeeCountMin,
-                  max: row.employeeCountMax
+                  max: row.employeeCountMax,
                 },
-          notes: row.notes
+          notes: row.notes,
         })),
         roleMapping: {
           included: splitRoleList(roleText.included),
-          excluded: splitRoleList(roleText.excluded)
+          excluded: splitRoleList(roleText.excluded),
         },
-        maxResultsPerSearch: 10
+        maxResultsPerSearch: 10,
       };
 
       const response = await fetch(`${API_BASE}/search`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -586,12 +618,18 @@ export default function App() {
 
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">Lead Search & Decision-Maker Extraction Tool</p>
-          <h1>Search by flexible criteria and extract only the people who can actually decide.</h1>
+          <p className="eyebrow">
+            Lead Search & Decision-Maker Extraction Tool
+          </p>
+          <h1>
+            Search by flexible criteria and extract only the people who can
+            actually decide.
+          </h1>
           <p className="subtitle">
-            Build one or more search rows from keyword, person name, company, industry, location,
-            and employee-count range. The backend resolves public decision-maker profiles, filters
-            out junior roles, and returns a clean contact table ready for export.
+            Build one or more search rows from keyword, person name, company,
+            industry, location, and employee-count range. The backend resolves
+            public decision-maker profiles, filters out junior roles, and
+            returns a clean contact table ready for export.
           </p>
         </div>
 
@@ -599,12 +637,18 @@ export default function App() {
           <article className="metric-card accent">
             <span>Scope</span>
             <strong>Decision-makers only</strong>
-            <p>Includes C-level, founders, directors, VPs, heads, and general managers.</p>
+            <p>
+              Includes C-level, founders, directors, VPs, heads, and general
+              managers.
+            </p>
           </article>
           <article className="metric-card">
             <span>Workflow</span>
             <strong>Search, filter, export</strong>
-            <p>Run multiple queries, refine the table with filters, and export CSV in one click.</p>
+            <p>
+              Run multiple queries, refine the table with filters, and export
+              CSV in one click.
+            </p>
           </article>
         </div>
       </section>
@@ -626,25 +670,28 @@ export default function App() {
             <h2>Define one or more searches</h2>
           </div>
 
-          <div className="builder-actions">
+          {/* <div className="builder-actions">
             <button type="button" className="secondary-button" onClick={loadSample}>
               Load sample
             </button>
             <button type="button" className="secondary-button" onClick={addSearchRow}>
               Add search row
             </button>
-          </div>
+          </div> */}
 
           <form onSubmit={handleSubmit} className="search-form">
             {searches.map((row, index) => (
               <article key={row.id} className="search-card">
                 <div className="search-card-head">
                   <div>
-                    <span className="search-index">Search {index + 1}</span>
+                    <span className="search-index">Search</span>
+                    {/* <span className="search-index">Search {index + 1}</span> */}
                     <input
                       className="search-label"
                       value={row.label}
-                      onChange={(event) => updateSearchRow(row.id, "label", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(row.id, "label", event.target.value)
+                      }
                       placeholder="Search label"
                     />
                   </div>
@@ -661,19 +708,27 @@ export default function App() {
                 </div>
 
                 <div className="field-grid">
-                  <label>
+                  {/* <label>
                     <span>Keyword</span>
                     <input
                       value={row.keyword}
-                      onChange={(event) => updateSearchRow(row.id, "keyword", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(row.id, "keyword", event.target.value)
+                      }
                       placeholder="e.g. healthcare platform"
                     />
-                  </label>
+                  </label> */}
                   <label>
                     <span>Person name</span>
                     <input
                       value={row.personName}
-                      onChange={(event) => updateSearchRow(row.id, "personName", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(
+                          row.id,
+                          "personName",
+                          event.target.value,
+                        )
+                      }
                       placeholder="e.g. Jane Doe"
                     />
                   </label>
@@ -681,7 +736,13 @@ export default function App() {
                     <span>Company name</span>
                     <input
                       value={row.companyName}
-                      onChange={(event) => updateSearchRow(row.id, "companyName", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(
+                          row.id,
+                          "companyName",
+                          event.target.value,
+                        )
+                      }
                       placeholder="e.g. Stripe"
                     />
                   </label>
@@ -689,7 +750,9 @@ export default function App() {
                     <span>Industry</span>
                     <input
                       value={row.industry}
-                      onChange={(event) => updateSearchRow(row.id, "industry", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(row.id, "industry", event.target.value)
+                      }
                       placeholder="e.g. Software"
                     />
                   </label>
@@ -697,16 +760,22 @@ export default function App() {
                     <span>Location</span>
                     <input
                       value={row.location}
-                      onChange={(event) => updateSearchRow(row.id, "location", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(row.id, "location", event.target.value)
+                      }
                       placeholder="Country, city, or region"
                     />
                   </label>
-                  <label>
+                  {/* <label>
                     <span>Employee count</span>
                     <select
                       value={row.employeeCountMode}
                       onChange={(event) =>
-                        updateSearchRow(row.id, "employeeCountMode", event.target.value)
+                        updateSearchRow(
+                          row.id,
+                          "employeeCountMode",
+                          event.target.value,
+                        )
                       }
                     >
                       <option value="any">Any</option>
@@ -714,32 +783,52 @@ export default function App() {
                       <option value="gt">Greater than</option>
                       <option value="between">Between</option>
                     </select>
-                  </label>
-                  <label>
+                  </label> */}
+                  {/* <label>
                     <span>Min</span>
                     <input
                       value={row.employeeCountMin}
-                      onChange={(event) => updateSearchRow(row.id, "employeeCountMin", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(
+                          row.id,
+                          "employeeCountMin",
+                          event.target.value,
+                        )
+                      }
                       placeholder="100"
-                      disabled={row.employeeCountMode === "any" || row.employeeCountMode === "lt"}
+                      disabled={
+                        row.employeeCountMode === "any" ||
+                        row.employeeCountMode === "lt"
+                      }
                     />
-                  </label>
-                  <label>
+                  </label> */}
+                  {/* <label>
                     <span>Max</span>
                     <input
                       value={row.employeeCountMax}
-                      onChange={(event) => updateSearchRow(row.id, "employeeCountMax", event.target.value)}
+                      onChange={(event) =>
+                        updateSearchRow(
+                          row.id,
+                          "employeeCountMax",
+                          event.target.value,
+                        )
+                      }
                       placeholder="5000"
-                      disabled={row.employeeCountMode === "any" || row.employeeCountMode === "gt"}
+                      disabled={
+                        row.employeeCountMode === "any" ||
+                        row.employeeCountMode === "gt"
+                      }
                     />
-                  </label>
+                  </label> */}
                 </div>
 
                 <label className="notes-field">
                   <span>Notes</span>
                   <textarea
                     value={row.notes}
-                    onChange={(event) => updateSearchRow(row.id, "notes", event.target.value)}
+                    onChange={(event) =>
+                      updateSearchRow(row.id, "notes", event.target.value)
+                    }
                     placeholder="Optional guidance, such as preferred titles or segments."
                     rows={3}
                   />
@@ -759,7 +848,10 @@ export default function App() {
                   rows={4}
                   value={roleText.included}
                   onChange={(event) =>
-                    setRoleText((current) => ({ ...current, included: event.target.value }))
+                    setRoleText((current) => ({
+                      ...current,
+                      included: event.target.value,
+                    }))
                   }
                   placeholder="CEO, Founder, VP, Director..."
                 />
@@ -770,12 +862,17 @@ export default function App() {
                   rows={4}
                   value={roleText.excluded}
                   onChange={(event) =>
-                    setRoleText((current) => ({ ...current, excluded: event.target.value }))
+                    setRoleText((current) => ({
+                      ...current,
+                      excluded: event.target.value,
+                    }))
                   }
                   placeholder="Intern, Trainee, Junior..."
                 />
               </label>
-              {roleConfigLoading ? <p className="micro-copy">Loading default role mapping...</p> : null}
+              {roleConfigLoading ? (
+                <p className="micro-copy">Loading default role mapping...</p>
+              ) : null}
             </div>
 
             <div className="button-row">
@@ -783,15 +880,17 @@ export default function App() {
                 {loading ? "Searching..." : "Run search"}
               </button>
               {loading ? (
-                <p className="loading-copy">Please wait while we fetch and filter decision-makers.</p>
+                <p className="loading-copy">
+                  Please wait while we fetch and filter decision-makers.
+                </p>
               ) : null}
             </div>
 
             <div className="hint-box">
               <strong>Output fields</strong>
               <p>
-                Person name, designation, department, company name, LinkedIn profile, phone number,
-                and email ID in a structured table.
+                Person name, designation, department, company name, LinkedIn
+                profile, phone number, and email ID in a structured table.
               </p>
             </div>
 
@@ -826,80 +925,163 @@ export default function App() {
             </div>
 
             {integrationStatus.error ? (
-              <p className="error">Integration check error: {integrationStatus.error}</p>
+              <p className="error">
+                Integration check error: {integrationStatus.error}
+              </p>
             ) : null}
 
             <div className="integration-grid">
               <article className="integration-card">
                 <strong>OpenAI</strong>
-                <p>Configured: {formatConnectionState(connectorSnapshot?.openaiConfigured)}</p>
-                <p>Backend status: {formatOpenAIStatus(integrationStatus.openaiDiagnostics)}</p>
-                <p>Model: {integrationStatus.openaiDiagnostics?.lastModel || "unknown"}</p>
+                <p>
+                  Configured:{" "}
+                  {formatConnectionState(connectorSnapshot?.openaiConfigured)}
+                </p>
+                <p>
+                  Backend status:{" "}
+                  {formatOpenAIStatus(integrationStatus.openaiDiagnostics)}
+                </p>
+                <p>
+                  Model:{" "}
+                  {integrationStatus.openaiDiagnostics?.lastModel || "unknown"}
+                </p>
                 <p className="micro-copy">
-                  Attempts: {formatCount(integrationStatus.openaiDiagnostics?.totalAttempts)} | Successes:{" "}
-                  {formatCount(integrationStatus.openaiDiagnostics?.successCount)} | Failures:{" "}
-                  {formatCount(integrationStatus.openaiDiagnostics?.failureCount)}
+                  Attempts:{" "}
+                  {formatCount(
+                    integrationStatus.openaiDiagnostics?.totalAttempts,
+                  )}{" "}
+                  | Successes:{" "}
+                  {formatCount(
+                    integrationStatus.openaiDiagnostics?.successCount,
+                  )}{" "}
+                  | Failures:{" "}
+                  {formatCount(
+                    integrationStatus.openaiDiagnostics?.failureCount,
+                  )}
                 </p>
                 {integrationStatus.openaiDiagnostics?.lastAttemptAt ? (
                   <p className="micro-copy">
-                    Last attempt: {new Date(integrationStatus.openaiDiagnostics.lastAttemptAt).toLocaleString()}
+                    Last attempt:{" "}
+                    {new Date(
+                      integrationStatus.openaiDiagnostics.lastAttemptAt,
+                    ).toLocaleString()}
                   </p>
                 ) : (
-                  <p className="micro-copy">No live OpenAI request has been made on this instance yet.</p>
+                  <p className="micro-copy">
+                    No live OpenAI request has been made on this instance yet.
+                  </p>
                 )}
                 {integrationStatus.openaiProbe ? (
                   <>
-                    <p>Probe result: {integrationStatus.openaiProbe.ok ? "OK" : "Failed"}</p>
+                    <p>
+                      Probe result:{" "}
+                      {integrationStatus.openaiProbe.ok ? "OK" : "Failed"}
+                    </p>
                     <p className="micro-copy">
-                      Output: {integrationStatus.openaiProbe.outputText || "No output returned"}
+                      Output:{" "}
+                      {integrationStatus.openaiProbe.outputText ||
+                        "No output returned"}
                     </p>
                   </>
                 ) : (
-                  <p className="micro-copy">Run the probe to confirm the live OpenAI path.</p>
+                  <p className="micro-copy">
+                    Run the probe to confirm the live OpenAI path.
+                  </p>
                 )}
               </article>
 
               <article className="integration-card">
                 <strong>Hunter</strong>
-                <p>Configured: {formatConnectionState(connectorSnapshot?.hunterConfigured)}</p>
-                <p>Integration mode: {connectorSnapshot?.hunterConfigured ? "hunter-domain-search" : "unconfigured"}</p>
+                <p>
+                  Configured:{" "}
+                  {formatConnectionState(connectorSnapshot?.hunterConfigured)}
+                </p>
+                <p>
+                  Integration mode:{" "}
+                  {connectorSnapshot?.hunterConfigured
+                    ? "hunter-domain-search"
+                    : "unconfigured"}
+                </p>
                 {integrationSnapshot?.hunter ? (
                   <>
-                    <p>Search targets: {formatCount(integrationSnapshot.hunter.targetCount)}</p>
-                    <p>Successful lookups: {formatCount(integrationSnapshot.hunter.successfulLookups)}</p>
-                    <p>Decision-maker contacts: {formatCount(integrationSnapshot.hunter.decisionMakerContactsFound)}</p>
-                    <p>Strong email matches: {formatCount(integrationSnapshot.hunter.strongMatches)}</p>
-                    <p>Hunter-tagged rows: {formatCount(integrationSnapshot.hunter.rowsWithHunterSource)}</p>
+                    <p>
+                      Search targets:{" "}
+                      {formatCount(integrationSnapshot.hunter.targetCount)}
+                    </p>
+                    <p>
+                      Successful lookups:{" "}
+                      {formatCount(
+                        integrationSnapshot.hunter.successfulLookups,
+                      )}
+                    </p>
+                    <p>
+                      Decision-maker contacts:{" "}
+                      {formatCount(
+                        integrationSnapshot.hunter.decisionMakerContactsFound,
+                      )}
+                    </p>
+                    <p>
+                      Strong email matches:{" "}
+                      {formatCount(integrationSnapshot.hunter.strongMatches)}
+                    </p>
+                    <p>
+                      Hunter-tagged rows:{" "}
+                      {formatCount(
+                        integrationSnapshot.hunter.rowsWithHunterSource,
+                      )}
+                    </p>
                   </>
                 ) : (
-                  <p className="micro-copy">Run a search to see Hunter enrichment evidence.</p>
+                  <p className="micro-copy">
+                    Run a search to see Hunter enrichment evidence.
+                  </p>
                 )}
               </article>
 
               <article className="integration-card">
                 <strong>Apollo</strong>
-                <p>Configured: {formatConnectionState(connectorSnapshot?.apolloConfigured)}</p>
-                <p>Integration mode: {connectorSnapshot?.apolloIntegrationMode || "unconfigured"}</p>
+                <p>
+                  Configured:{" "}
+                  {formatConnectionState(connectorSnapshot?.apolloConfigured)}
+                </p>
+                <p>
+                  Integration mode:{" "}
+                  {connectorSnapshot?.apolloIntegrationMode || "unconfigured"}
+                </p>
                 {integrationSnapshot?.apollo ? (
                   <>
-                    <p>Company contexts enriched: {formatCount(integrationSnapshot.apollo.companyContextsWithApollo)}</p>
+                    <p>
+                      Company contexts enriched:{" "}
+                      {formatCount(
+                        integrationSnapshot.apollo.companyContextsWithApollo,
+                      )}
+                    </p>
                     <p className="micro-copy">
-                      Used in search: {integrationSnapshot.apollo.used ? "Yes" : "No"}
+                      Used in search:{" "}
+                      {integrationSnapshot.apollo.used ? "Yes" : "No"}
                     </p>
                     <p className="micro-copy">
                       Latest employee strength source:{" "}
-                      {integrationSnapshot.apollo.employeeStrengthSources?.[0]?.source || "n/a"}
+                      {integrationSnapshot.apollo.employeeStrengthSources?.[0]
+                        ?.source || "n/a"}
                     </p>
                   </>
                 ) : (
-                  <p className="micro-copy">Run a search to see Apollo company enrichment evidence.</p>
+                  <p className="micro-copy">
+                    Run a search to see Apollo company enrichment evidence.
+                  </p>
                 )}
               </article>
             </div>
           </section>
 
           {loading ? (
-            <div className="loading-overlay" role="status" aria-live="polite" aria-busy="true">
+            <div
+              className="loading-overlay"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
               <div className="loading-card">
                 <span className="loading-spinner" />
                 <strong>Searching decision-makers</strong>
@@ -936,28 +1118,43 @@ export default function App() {
                 </div>
                 <div className="results-banner">
                   <span>Mode</span>
-                  <p>{summary.sourceMode === "openai-web-search" ? "Live web search" : "Local fallback"}</p>
+                  <p>
+                    {summary.sourceMode === "openai-web-search"
+                      ? "Live web search"
+                      : "Local fallback"}
+                  </p>
                 </div>
                 {integrationSnapshot ? (
                   <div className="results-banner secondary-banner">
                     <span>Integration snapshot</span>
                     <p>
-                      OpenAI: {integrationSnapshot.openai.used ? "used" : "not used"} | Hunter:{" "}
-                      {integrationSnapshot.hunter.strongMatches || integrationSnapshot.hunter.successfulLookups ? "used" : "not used"} | Apollo:{" "}
+                      OpenAI:{" "}
+                      {integrationSnapshot.openai.used ? "used" : "not used"} |
+                      Hunter:{" "}
+                      {integrationSnapshot.hunter.strongMatches ||
+                      integrationSnapshot.hunter.successfulLookups
+                        ? "used"
+                        : "not used"}{" "}
+                      | Apollo:{" "}
                       {integrationSnapshot.apollo.used ? "used" : "not used"}
                     </p>
                   </div>
                 ) : null}
                 {summary.timings ? (
                   <p className="micro-copy">
-                    Backend timing: {Math.round(summary.timings.totalMs / 100) / 10}s total | company resolve{" "}
-                    {Math.round(summary.timings.searchResolutionMs / 100) / 10}s | OpenAI{" "}
-                    {Math.round(summary.timings.openaiSearchMs / 100) / 10}s | Hunter{" "}
+                    Backend timing:{" "}
+                    {Math.round(summary.timings.totalMs / 100) / 10}s total |
+                    company resolve{" "}
+                    {Math.round(summary.timings.searchResolutionMs / 100) / 10}s
+                    | OpenAI{" "}
+                    {Math.round(summary.timings.openaiSearchMs / 100) / 10}s |
+                    Hunter{" "}
                     {Math.round(summary.timings.hunterEnrichmentMs / 100) / 10}s
                   </p>
                 ) : null}
                 <p className="micro-copy">
-                  Generated at {new Date(summary.generatedAt).toLocaleString()} | Roles filtered using{" "}
+                  Generated at {new Date(summary.generatedAt).toLocaleString()}{" "}
+                  | Roles filtered using{" "}
                   {Array.isArray(summary.roleMapping?.included)
                     ? summary.roleMapping.included.length
                     : 0}{" "}
@@ -1037,8 +1234,13 @@ export default function App() {
                   <div>
                     <dt>LinkedIn</dt>
                     <dd>
-                      {researchBrief.accountContext.linkedinUrl !== "Unavailable" ? (
-                        <a href={researchBrief.accountContext.linkedinUrl} target="_blank" rel="noreferrer">
+                      {researchBrief.accountContext.linkedinUrl !==
+                      "Unavailable" ? (
+                        <a
+                          href={researchBrief.accountContext.linkedinUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           Open company profile
                         </a>
                       ) : (
@@ -1062,21 +1264,32 @@ export default function App() {
                 <div className="brief-subsection">
                   <span>LinkedIn intent signals</span>
                   <p>No LinkedIn API data was returned for this account.</p>
-                  <p className="micro-copy">Source: unavailable | Provider: n/a</p>
+                  <p className="micro-copy">
+                    Source: unavailable | Provider: n/a
+                  </p>
                 </div>
                 <div className="brief-subsection">
                   <span>Indeed hiring trends</span>
                   <p>No Indeed hiring data was returned for this account.</p>
-                  <p className="micro-copy">Source: unavailable | Provider: n/a</p>
+                  <p className="micro-copy">
+                    Source: unavailable | Provider: n/a
+                  </p>
                 </div>
                 <div className="brief-subsection">
                   <span>Crunchbase funding signals</span>
-                  <p>No Crunchbase funding data was returned for this account.</p>
-                  <p className="micro-copy">Source: unavailable | Provider: n/a</p>
+                  <p>
+                    No Crunchbase funding data was returned for this account.
+                  </p>
+                  <p className="micro-copy">
+                    Source: unavailable | Provider: n/a
+                  </p>
                 </div>
                 <div className="brief-subsection">
                   <span>Finalized ICP</span>
-                  <p>Growth-oriented accounts with active hiring, modernization, or expansion signals</p>
+                  <p>
+                    Growth-oriented accounts with active hiring, modernization,
+                    or expansion signals
+                  </p>
                   <ul>
                     <li>Public hiring momentum</li>
                     <li>Regional expansion cues</li>
@@ -1087,15 +1300,39 @@ export default function App() {
                 <div className="brief-subsection">
                   <span>Target segments</span>
                   <ul>
-                    <li>Primary ICP: high | Best-fit accounts with active growth or hiring motion</li>
-                    <li>Functions: Revenue Operations, Sales Leadership, Marketing Operations</li>
-                    <li>Triggers: Backend Engineer, Solutions Architect, Product Manager</li>
-                    <li>Secondary ICP: medium | Adjacent accounts that are growing but may need more education</li>
+                    <li>
+                      Primary ICP: high | Best-fit accounts with active growth
+                      or hiring motion
+                    </li>
+                    <li>
+                      Functions: Revenue Operations, Sales Leadership, Marketing
+                      Operations
+                    </li>
+                    <li>
+                      Triggers: Backend Engineer, Solutions Architect, Product
+                      Manager
+                    </li>
+                    <li>
+                      Secondary ICP: medium | Adjacent accounts that are growing
+                      but may need more education
+                    </li>
                     <li>Functions: Operations, Business Strategy, Revenue</li>
-                    <li>Triggers: regional_expansion, commercial_push, operational_modernization</li>
-                    <li>Expansion ICP: medium | Accounts in regions or subsidiaries where footprint is spreading</li>
-                    <li>Functions: Regional Leadership, Operations, Sales Leadership</li>
-                    <li>Triggers: regional_expansion, headcount_growth, multi_location_presence</li>
+                    <li>
+                      Triggers: regional_expansion, commercial_push,
+                      operational_modernization
+                    </li>
+                    <li>
+                      Expansion ICP: medium | Accounts in regions or
+                      subsidiaries where footprint is spreading
+                    </li>
+                    <li>
+                      Functions: Regional Leadership, Operations, Sales
+                      Leadership
+                    </li>
+                    <li>
+                      Triggers: regional_expansion, headcount_growth,
+                      multi_location_presence
+                    </li>
                   </ul>
                 </div>
               </article>
@@ -1116,38 +1353,47 @@ export default function App() {
                     <dd>medium</dd>
                   </div>
                 </dl>
-                <p className="micro-copy">No explicit hiring language detected on sampled website content</p>
+                <p className="micro-copy">
+                  No explicit hiring language detected on sampled website
+                  content
+                </p>
               </article>
 
               <article className="brief-card brief-card-wide">
                 <strong>Outreach</strong>
                 <div className="brief-subsection">
                   <span>Subject line</span>
-                  <p>Scaling {researchBrief.accountContext.companyName}'s Growth with Confidence</p>
+                  <p>
+                    Scaling {researchBrief.accountContext.companyName}'s Growth
+                    with Confidence
+                  </p>
                 </div>
                 <div className="brief-subsection">
                   <span>Email</span>
                   <p>
-                    Hi {researchBrief.outreachName}, I noticed your recent focus on hiring,
-                    modernization, and operational efficiency. At [Your Company], we help growth
-                    teams reduce execution risk while they scale. Would you be open to a brief
-                    call next week to explore how we can support {researchBrief.accountContext.companyName}&apos;s scale-up
+                    Hi {researchBrief.outreachName}, I noticed your recent focus
+                    on hiring, modernization, and operational efficiency. At
+                    [Your Company], we help growth teams reduce execution risk
+                    while they scale. Would you be open to a brief call next
+                    week to explore how we can support{" "}
+                    {researchBrief.accountContext.companyName}&apos;s scale-up
                     efforts?
                   </p>
                 </div>
                 <div className="brief-subsection">
                   <span>LinkedIn message</span>
                   <p>
-                    Hi {researchBrief.outreachName}, I saw your focus on hiring and operational
-                    efficiency. We help growth teams scale with less friction. Would you be open
-                    to a short chat?
+                    Hi {researchBrief.outreachName}, I saw your focus on hiring
+                    and operational efficiency. We help growth teams scale with
+                    less friction. Would you be open to a short chat?
                   </p>
                 </div>
                 <div className="brief-subsection">
                   <span>Call opener</span>
                   <p>
-                    I saw you&apos;re focusing on improving operational efficiency during your
-                    hiring push. How are you managing execution risk while scaling your teams?
+                    I saw you&apos;re focusing on improving operational
+                    efficiency during your hiring push. How are you managing
+                    execution risk while scaling your teams?
                   </p>
                 </div>
               </article>
@@ -1166,7 +1412,10 @@ export default function App() {
                 <input
                   value={filters.query}
                   onChange={(event) =>
-                    setFilters((current) => ({ ...current, query: event.target.value }))
+                    setFilters((current) => ({
+                      ...current,
+                      query: event.target.value,
+                    }))
                   }
                   placeholder="Search across all columns"
                 />
@@ -1176,7 +1425,10 @@ export default function App() {
                 <input
                   value={filters.company}
                   onChange={(event) =>
-                    setFilters((current) => ({ ...current, company: event.target.value }))
+                    setFilters((current) => ({
+                      ...current,
+                      company: event.target.value,
+                    }))
                   }
                   placeholder="Filter by company"
                 />
@@ -1186,7 +1438,10 @@ export default function App() {
                 <input
                   value={filters.title}
                   onChange={(event) =>
-                    setFilters((current) => ({ ...current, title: event.target.value }))
+                    setFilters((current) => ({
+                      ...current,
+                      title: event.target.value,
+                    }))
                   }
                   placeholder="Filter by title"
                 />
@@ -1196,7 +1451,10 @@ export default function App() {
                 <input
                   value={filters.location}
                   onChange={(event) =>
-                    setFilters((current) => ({ ...current, location: event.target.value }))
+                    setFilters((current) => ({
+                      ...current,
+                      location: event.target.value,
+                    }))
                   }
                   placeholder="Filter by location"
                 />
@@ -1248,22 +1506,34 @@ export default function App() {
                         <td data-label="Person Name">
                           <strong>{row.personName || "Unknown"}</strong>
                         </td>
-                        <td data-label="Designation">{row.designation || "Unknown"}</td>
-                        <td data-label="Department">{row.department || "n/a"}</td>
+                        <td data-label="Designation">
+                          {row.designation || "Unknown"}
+                        </td>
+                        <td data-label="Department">
+                          {row.department || "n/a"}
+                        </td>
                         <td data-label="Company Name">
                           <strong>{row.companyName || "Unknown"}</strong>
                         </td>
                         <td data-label="LinkedIn Profile">
                           {row.linkedinProfile ? (
-                            <a href={row.linkedinProfile} target="_blank" rel="noreferrer">
+                            <a
+                              href={row.linkedinProfile}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
                               Open profile
                             </a>
                           ) : (
                             <span className="muted">Unavailable</span>
                           )}
                         </td>
-                        <td data-label="Phone Number">{row.phoneNumber || "Unavailable"}</td>
-                        <td data-label="Email ID">{row.emailId || "Unavailable"}</td>
+                        <td data-label="Phone Number">
+                          {row.phoneNumber || "Unavailable"}
+                        </td>
+                        <td data-label="Email ID">
+                          {row.emailId || "Unavailable"}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1293,14 +1563,16 @@ export default function App() {
                     </div>
                     <p>{log.summary}</p>
                     <p className="micro-copy">
-                      {log.mode} | {log.criteria?.keyword || log.criteria?.companyName || "criteria provided"}
+                      {log.mode} |{" "}
+                      {log.criteria?.keyword ||
+                        log.criteria?.companyName ||
+                        "criteria provided"}
                     </p>
                   </article>
                 ))}
               </div>
             </section>
           ) : null}
-
         </section>
       </section>
     </main>
