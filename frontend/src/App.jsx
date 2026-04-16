@@ -108,6 +108,34 @@ function formatCount(value) {
   return Number.isFinite(Number(value)) ? Number(value) : 0;
 }
 
+function formatOpenAIStatus(diagnostics) {
+  if (!diagnostics) {
+    return "No live check yet";
+  }
+
+  if (diagnostics.lastStatus === "not_attempted") {
+    return "Configured, probe not run yet";
+  }
+
+  if (diagnostics.lastStatus === "missing_key") {
+    return "Configured check failed: missing key";
+  }
+
+  if (diagnostics.lastStatus === "fallback") {
+    return "Fallback used";
+  }
+
+  if (diagnostics.lastStatus === "success") {
+    return "Live request succeeded";
+  }
+
+  if (diagnostics.lastStatus === "error") {
+    return "Live request failed";
+  }
+
+  return diagnostics.lastStatus || "Unknown";
+}
+
 function createSearchRow(index = 0) {
   return {
     id: `${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
@@ -766,13 +794,20 @@ export default function App() {
               <article className="integration-card">
                 <strong>OpenAI</strong>
                 <p>Configured: {formatConnectionState(connectorSnapshot?.openaiConfigured)}</p>
-                <p>Backend status: {integrationStatus.openaiDiagnostics?.lastStatus || "unknown"}</p>
+                <p>Backend status: {formatOpenAIStatus(integrationStatus.openaiDiagnostics)}</p>
                 <p>Model: {integrationStatus.openaiDiagnostics?.lastModel || "unknown"}</p>
                 <p className="micro-copy">
                   Attempts: {formatCount(integrationStatus.openaiDiagnostics?.totalAttempts)} | Successes:{" "}
                   {formatCount(integrationStatus.openaiDiagnostics?.successCount)} | Failures:{" "}
                   {formatCount(integrationStatus.openaiDiagnostics?.failureCount)}
                 </p>
+                {integrationStatus.openaiDiagnostics?.lastAttemptAt ? (
+                  <p className="micro-copy">
+                    Last attempt: {new Date(integrationStatus.openaiDiagnostics.lastAttemptAt).toLocaleString()}
+                  </p>
+                ) : (
+                  <p className="micro-copy">No live OpenAI request has been made on this instance yet.</p>
+                )}
                 {integrationStatus.openaiProbe ? (
                   <>
                     <p>Probe result: {integrationStatus.openaiProbe.ok ? "OK" : "Failed"}</p>
